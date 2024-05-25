@@ -12,6 +12,4 @@ jobs:
       working_directory: "./FE-CreeperKeeper"
       s3_bucket: "creeperkeeper.com"
       node_version: 20
-    secrets:
-      AWS_ACCOUNT_ID_PROD: ${{secrets.AWS_ACCOUNT_ID_PROD}}
-      AWS_ACCOUNT_ID_DEV: ${{secrets.AWS_ACCOUNT_ID_DEV}}
+    secrets: inherit
