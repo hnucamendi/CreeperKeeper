@@ -1,0 +1,34 @@
+.main-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #333;
+  padding: 10px 20px;
+  color: white;
+  font-family: "Arial", sans-serif;
+}
+
+.main-nav ol {
+  list-style-type: none;
+  display: flex;
+  margin: 0;
+  padding: 0;
+}
+
+.main-nav ol li {
+  margin-right: 20px;
+}
+
+.main-nav ol li:last-child {
+  margin-right: 0;
+}
+
+.main-nav a {
+  text-decoration: none;
+  color: white;
+  transition: color 0.3s ease;
+}
+
+.main-nav a:hover {
+  color: #ff6347; /* Tomato color for hover effect */
+}

@@ -1,4 +1,14 @@
 import { useNavigate } from "react-router-dom";
+import Nav from "../components/Nav";
+import Footer from "../components/Footer";
+import Container from "../components/Container";
+import {
+  FormContainer,
+  Label,
+  Select,
+  Option,
+  Button,
+} from "../components/Form/index";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -8,28 +18,32 @@ const Home = () => {
   };
 
   return (
-    <div className="server-menu">
-      <div>
-        <form>
-          <label htmlFor="server-dropdown">Select Version</label>
-          <select id="server-dropdown"></select>
-          <button>Create Server</button>
-        </form>
-      </div>
-
-      <div>
-        <form>
-          <label htmlFor="server-dropdown">Select Saved Instance</label>
-          <select id="server-dropdown"></select>
-          <button>Startup Server</button>
-        </form>
-      </div>
-      <div>
-        <h1>Hello World</h1>
-        <p>See console log for Amazon Cognito user tokens.</p>
-        <button onClick={handleLogout}>Logout</button>
-      </div>
-    </div>
+    <Container className="server-menu">
+      <Nav
+        listItems={[
+          { item: "Home", link: "/home", callback: null },
+          { item: "Sign Out", link: "/login", callback: handleLogout },
+        ]}
+      ></Nav>
+      <FormContainer>
+        <Label htmlFor="server-dropdown">Select Version</Label>
+        <Select id="server-dropdown" />
+        <Button>Create Server</Button>
+      </FormContainer>
+      <FormContainer>
+        <Label htmlFor="server-dropdown">Select Saved Instance</Label>
+        <Select id="server-dropdown">
+          <Option>Test</Option>
+          <Option>Test</Option>
+          <Option>Test</Option>
+          <Option>Test</Option>
+          <Option>Test</Option>
+          <Option>Test</Option>
+        </Select>
+        <Button>Startup Server</Button>
+      </FormContainer>
+      <Footer />
+    </Container>
   );
 };
 

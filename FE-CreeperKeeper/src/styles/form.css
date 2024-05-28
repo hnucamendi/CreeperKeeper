@@ -1,0 +1,149 @@
+/* FORM */
+.form-container {
+  width: 100%;
+  max-width: 600px;
+  padding: 20px;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  margin: 20px 0;
+  font-family: "Arial", sans-serif;
+}
+
+.form-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+}
+
+.form-item label {
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.form-item input,
+.form-item select,
+.form-item textarea {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-item input:focus,
+.form-item select:focus,
+.form-item textarea:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.form-item button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  align-self: flex-start;
+  border-radius: 4px;
+}
+
+.form-item button:hover {
+  background-color: #0056b3;
+}
+
+/* FORM LABEL */
+.custom-label {
+  margin-bottom: 5px;
+  font-weight: bold;
+  font-family: "Arial", sans-serif;
+}
+
+/* FORM INPUT */
+.custom-input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: "Arial", sans-serif;
+}
+
+.custom-input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+/* FORM SELECT */
+.custom-select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: "Arial", sans-serif;
+  background-color: white;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.custom-select:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.select-container {
+  position: relative;
+  width: 100%;
+}
+
+.select-container::after {
+  content: "▼";
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #007bff;
+  font-size: 12px;
+}
+
+/* FORM BUTTON */
+.custom-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  border-radius: 4px;
+  font-family: "Arial", sans-serif;
+  font-size: 16px;
+}
+
+.custom-button:hover {
+  background-color: #0056b3;
+}
+
+/* FORM OPTION */
+.custom-option {
+  padding: 10px;
+  font-family: "Arial", sans-serif;
+  font-size: 16px;
+  background-color: white;
+  color: #333;
+}
+
+.custom-option:hover {
+  background-color: #f0f0f0;
+}
+
+.custom-option:checked {
+  background-color: #007bff;
+  color: white;
+}
