@@ -35,7 +35,6 @@ jobs:
           echo "lambdas=${lambdas}"
           matrix=$(echo "${lambdas}" | jq -r '[.[] | {name: .name, go_version: .go_version}]')
           echo "::set-output name=matrix::$(echo $matrix | jq -c)"
-          echo $matrix
   deploy_lambdas:
     needs: fetch_lambdas
     strategy:
