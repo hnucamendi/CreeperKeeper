@@ -45,5 +45,5 @@ jobs:
       version_tag: ${{ github.ref }}
       lambda_name: ${{ matrix.lambdas.name }}
       runtime_version: ${{ matrix.lambdas.go_version }}
-      subdirectory: "./BE-CreeperKeeper/functions"
+      subdirectory: "./BE-CreeperKeeper/functions/${{ matrix.lambdas.name }}"
     secrets: inherit
