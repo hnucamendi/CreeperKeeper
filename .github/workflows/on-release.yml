@@ -33,11 +33,9 @@ jobs:
         run: |
           lambdas='${{ steps.fetch_lambdas.outputs.lambdas }}'
           echo "lambdas=${lambdas}"
-          matrix=$(echo "${lambdas}" | jq -r '{name: .name, go_version: .go_version}')
+          matrix=$(echo "${lambdas}" | jq -r '[.[] | {name: .name, go_version: .go_version}]')
           echo "::set-output name=matrix::$(echo $matrix | jq -c)"
           echo $matrix
-          echo $matrix.name
-          echo $matrix.go_version
   deploy_lambdas:
     needs: fetch_lambdas
     strategy:
@@ -46,7 +44,7 @@ jobs:
     uses: hnucamendi/shared-gha-workflows/.github/workflows/deploy-given-version-lambda.yml@master
     with:
       version_tag: ${{ github.ref }}
-      lambda_name: ${{ matrix.lambdas.name }}
-      runtime_version: ${{ matrix.lambdas.go_version }}
-      subdirectory: "./BE-CreeperKeeper/functions/${{ matrix.lambdas.name }}"
+      lambda_name: ${{ matrix.lambda.name }}
+      runtime_version: ${{ matrix.lambda.go_version }}
+      subdirectory: "./BE-CreeperKeeper/functions/${{ matrix.lambda.name }}"
     secrets: inherit
