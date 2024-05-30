@@ -25,7 +25,6 @@ jobs:
       - name: Fetch Lambda Names and Go Versions
         id: fetch_lambdas
         run: |
-          echo $(pwd)
           chmod +x ./utils/fetch-lambdas.sh
           lambdas=$(./utils/fetch-lambdas.sh)
           echo "::set-output name=lambdas::$lambdas"
@@ -34,16 +33,17 @@ jobs:
         run: |
           lambdas="${{ steps.fetch_lambdas.outputs.lambdas }}"
           echo "lambdas=${lambdas}"
-          matrix=$(echo "${lambdas}" | jq -r '[.[] | {name: .name, go_version: .go_version}] | tojson')
-          echo "::set-output name=matrix::$matrix"
+          matrix=$(echo "${lambdas}" | jq -r '[.[] | {name: .name, go_version: .go_version}]')
+          echo "::set-output name=matrix::$(echo $matrix | jq -c)"
   deploy_lambdas:
     needs: fetch_lambdas
     strategy:
-      matrix: ${{ fromJson(needs.fetch_lambdas.outputs.matrix) }}
+      matrix:
+        lambda: ${{ fromJson(needs.fetch_lambdas.outputs.matrix) }}
     uses: hnucamendi/shared-gha-workflows/.github/workflows/deploy-given-version-lambda.yml@master
     with:
       version_tag: ${{ github.ref }}
-      lambda_name: ${{ matrix.name }}
-      runtime_version: ${{ matrix.go_version }}
+      lambda_name: ${{ matrix.lambda.name }}
+      runtime_version: ${{ matrix.lambda.go_version }}
       subdirectory: "./BE-CreeperKeeper/functions"
     secrets: inherit
