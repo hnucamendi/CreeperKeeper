@@ -13,18 +13,20 @@ jobs:
       s3_bucket: "creeperkeeper.com"
       node_version: 20
     secrets: inherit
-  deploy-lambdas:
+  fetch_lambdas:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
       - name: Install jq
         run: sudo apt-get install -y jq
-      - name: "get lambdas name & Go version"
+      - name: Fetch Lambda Names and Go Versions
         id: fetch_lambdas
         run: |
-          chmod +x ./utils/fetch_lambdas.sh
-          lambdas=$(./utils/fetch_lambdas.sh)
+          chmod +x ./fetch-lambdas.sh
+          lambdas=$(./fetch-lambdas.sh)
           echo "::set-output name=lambdas::$lambdas"
       - name: Set up Matrix
         id: set-matrix
@@ -33,10 +35,14 @@ jobs:
           echo "lambdas=${lambdas}"
           matrix=$(echo "${lambdas}" | jq -r '[.[] | {name: .name, go_version: .go_version}] | tojson')
           echo "::set-output name=matrix::$matrix"
-      - name: "Deploy Lambdas"
-        uses: hnucamendi/shared-gha-workflows/.github/workflows/deploy-given-version-lambda.yml@master
-        with:
-          version_tag: ${{ github.ref }}
-          lambda_name: ${{ fromJson(steps.set-matrix.outputs.matrix)[index].name }}
-          runtime_version: ${{ fromJson(steps.set-matrix.outputs.matrix)[index].go_version }}
-          subdirectory: "./BE-CreeperKeeper/functions"
+  deploy_lambdas:
+    needs: fetch_lambdas
+    strategy:
+      matrix: ${{ fromJson(needs.fetch_lambdas.outputs.matrix) }}
+    uses: hnucamendi/shared-gha-workflows/.github/workflows/deploy-given-version-lambda.yml@master
+    with:
+      version_tag: ${{ github.ref }}
+      lambda_name: ${{ matrix.name }}
+      runtime_version: ${{ matrix.go_version }}
+      subdirectory: "./BE-CreeperKeeper/functions"
+    secrets: inherit
