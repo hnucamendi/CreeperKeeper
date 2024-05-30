@@ -25,6 +25,7 @@ jobs:
       - name: Fetch Lambda Names and Go Versions
         id: fetch_lambdas
         run: |
+          echo $(pwd)
           chmod +x ./utils/fetch-lambdas.sh
           lambdas=$(./utils/fetch-lambdas.sh)
           echo "::set-output name=lambdas::$lambdas"
