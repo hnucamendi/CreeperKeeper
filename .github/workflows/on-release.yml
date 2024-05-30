@@ -31,7 +31,7 @@ jobs:
       - name: Set up Matrix
         id: set-matrix
         run: |
-          lambdas="${{ steps.fetch_lambdas.outputs.lambdas }}"
+          lambdas='${{ steps.fetch_lambdas.outputs.lambdas }}'
           echo "lambdas=${lambdas}"
           matrix=$(echo "${lambdas}" | jq -r '[.[] | {name: .name, go_version: .go_version}]')
           echo "::set-output name=matrix::$(echo $matrix | jq -c)"
@@ -43,7 +43,7 @@ jobs:
     uses: hnucamendi/shared-gha-workflows/.github/workflows/deploy-given-version-lambda.yml@master
     with:
       version_tag: ${{ github.ref }}
-      lambda_name: ${{ matrix.lambda.name }}
-      runtime_version: ${{ matrix.lambda.go_version }}
+      lambda_name: ${{ matrix.lambdas.name }}
+      runtime_version: ${{ matrix.lambdas.go_version }}
       subdirectory: "./BE-CreeperKeeper/functions"
     secrets: inherit
