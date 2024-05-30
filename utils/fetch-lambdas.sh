@@ -11,7 +11,11 @@ for dir in "$LAMBDAS_DIR"/*/; do
   if [ -f "$dir/go.mod" ]; then
     lambda_name=$(basename "$dir")
     go_version=$(grep '^go ' "$dir/go.mod" | awk '{print $2}')
-    lambdas_info+=("{\"name\":\"$lambda_name\",\"go_version\":\"$go_version\"}")
+    
+    # Extract major and minor versions
+    major_minor_version=$(echo "$go_version" | grep -oE '^[0-9]+\.[0-9]+')
+    
+    lambdas_info+=("{\"name\":\"$lambda_name\",\"go_version\":\"$major_minor_version\"}")
   fi
 done
 
