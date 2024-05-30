@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Directory containing the Lambda functions
-LAMBDAS_DIR="./functions"
+LAMBDAS_DIR="./BE-CreeperKeeper/functions"
 
 # Initialize an array to hold the Lambda info
 lambdas_info=()
