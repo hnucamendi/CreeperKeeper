@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -10,7 +9,7 @@ import (
 
 type AuthResponse struct {
 	PrincipalId    string         `json:"principalId"`
-	PolicyDocument PolicyDocument `json:"policyDocument,omitempty"`
+	PolicyDocument PolicyDocument `json:"policyDocument"`
 	Context        Context        `json:"context"`
 }
 
@@ -60,14 +59,27 @@ func generatePolicy(principalId string, effect string, resource string) *AuthRes
 	return authResponse
 }
 
-func HandleRequest(ctx context.Context, event events.APIGatewayV2HTTPRequest) (string, error) {
-	authResponse := generateAllow("principalId_value", "resource_value")
-	authResponseJSON, err := json.Marshal(authResponse)
-	if err != nil {
-		return "", err
-	}
+func HandleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
+	authResponse := generateAllow("principalId_value", event.MethodArn)
 
-	return string(authResponseJSON), nil
+	return events.APIGatewayCustomAuthorizerResponse{
+		PrincipalID: authResponse.PrincipalId,
+		PolicyDocument: events.APIGatewayCustomAuthorizerPolicy{
+			Version: authResponse.PolicyDocument.Version,
+			Statement: []events.IAMPolicyStatement{
+				{
+					Action:   authResponse.PolicyDocument.Statement[0].Action,
+					Effect:   authResponse.PolicyDocument.Statement[0].Effect,
+					Resource: authResponse.PolicyDocument.Statement[0].Resource,
+				},
+			},
+		},
+		Context: map[string]interface{}{
+			"stringKey":  authResponse.Context.StringKey,
+			"numberKey":  authResponse.Context.NumberKey,
+			"booleanKey": authResponse.Context.BooleanKey,
+		},
+	}, nil
 }
 
 func main() {
