@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -60,6 +61,7 @@ func generatePolicy(principalId string, effect string, resource string) *AuthRes
 }
 
 func HandleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
+	fmt.Println(event)
 	authResponse := generateAllow("principalId_value", event.MethodArn)
 
 	return events.APIGatewayCustomAuthorizerResponse{
