@@ -68,9 +68,9 @@ func HandleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerR
 			Version: authResponse.PolicyDocument.Version,
 			Statement: []events.IAMPolicyStatement{
 				{
-					Action:   authResponse.PolicyDocument.Statement[0].Action,
+					Action:   []string{authResponse.PolicyDocument.Statement[0].Action},
 					Effect:   authResponse.PolicyDocument.Statement[0].Effect,
-					Resource: authResponse.PolicyDocument.Statement[0].Resource,
+					Resource: []string{authResponse.PolicyDocument.Statement[0].Resource},
 				},
 			},
 		},
