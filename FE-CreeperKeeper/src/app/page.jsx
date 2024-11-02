@@ -36,13 +36,46 @@ export default function Home() {
       }),
     }
 
-    const req = await fetch(url, body)
-    const res = await req.json()
-    console.log({ res })
+    try {
+      const req = await fetch(url, body);
+      if (!req.ok) {
+        throw new Error(`HTTP error! status: ${req.status}`);
+      }
+      const res = await req.json(); // Parse the response as JSON
+      setStart(res.message)
+    } catch (error) {
+      console.error("Error starting the server:", error);
+      setStart("Error starting the server")
+    }
   };
 
-  const handleStopMCServer = () => {
-    path = "stop";
+  const handleStopMCServer = async () => {
+    const path = "stop";
+
+    const url = `${ck_url}/${path}`;
+
+    const body = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${getAuth()}`,
+      },
+      body: JSON.stringify({
+        instanceID: instance,
+      }),
+    }
+
+    try {
+      const req = await fetch(url, body);
+      if (!req.ok) {
+        throw new Error(`HTTP error! status: ${req.status}`);
+      }
+      const res = await req.json(); // Parse the response as JSON
+      setStart(res.message)
+    } catch (error) {
+      console.error("Error stopping the server:", error);
+      setStart("Error stopping the server")
+    }
   };
 
   return (
@@ -52,7 +85,7 @@ export default function Home() {
           <h1>Select Instance</h1>
           <select onChange={handleSetInstance}>
             <option value="">None</option>
-            <option>Instance 1</option>
+            <option value={"i-0187f9956b38d5b3f"}>Instance 1</option>
             <option>Instance 2</option>
             <option>Instance 3</option>
           </select>

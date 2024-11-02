@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
 )
@@ -14,18 +15,36 @@ import (
 var (
 	mux *http.ServeMux
 	sc  *ssm.Client
+	db  *dynamodb.Client
 )
+
+type C struct {
+	sc *ssm.Client
+	db *dynamodb.Client
+}
 
 func init() {
 	mux = http.NewServeMux()
 
-	cfg, err := config.LoadDefaultConfig(context.TODO())
+	ssmcfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		panic("unable to load SDK config, " + err.Error())
 	}
 
-	sc = ssm.NewFromConfig(cfg)
-	h := NewHandler(sc)
+	dbcfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		panic("unable to load SDK config, " + err.Error())
+	}
+
+	sc = ssm.NewFromConfig(ssmcfg)
+	db = dynamodb.NewFromConfig(dbcfg)
+
+	c := &C{
+		sc: sc,
+		db: db,
+	}
+
+	h := NewHandler(c)
 	loadRoutes(mux, h)
 
 }
