@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -80,9 +79,6 @@ func (h *Handler) GetInstances(w http.ResponseWriter, r *http.Request) {
 	for _, item := range out.Items {
 		instances = append(instances, item["PK"].(*types.AttributeValueMemberS).Value)
 	}
-
-	fmt.Println(instances)
-	fmt.Println(out.Items)
 
 	response, err := json.Marshal(instances)
 	if err != nil {
