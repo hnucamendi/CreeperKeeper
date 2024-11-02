@@ -99,5 +99,6 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 
 func WriteResponse(w http.ResponseWriter, code int, message string) {
 	w.WriteHeader(code)
+	message = `{"message": "` + message + `"}`
 	w.Write([]byte(message))
 }
