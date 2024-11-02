@@ -11,5 +11,6 @@ jobs:
     with:
       working_directory: "./FE-CreeperKeeper"
       s3_bucket: "www.creeperkeeper.com"
+      build_directory: "./next"
       node_version: 20
     secrets: inherit
