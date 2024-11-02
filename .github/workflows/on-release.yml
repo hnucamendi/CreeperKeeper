@@ -10,6 +10,6 @@ jobs:
     uses: hnucamendi/shared-gha-workflows/.github/workflows/deploy-react.yml@master
     with:
       working_directory: "./FE-CreeperKeeper"
-      s3_bucket: "creeperkeeper.com"
+      s3_bucket: "www.creeperkeeper.com"
       node_version: 20
     secrets: inherit
