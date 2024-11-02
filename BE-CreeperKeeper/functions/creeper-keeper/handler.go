@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -67,14 +68,8 @@ func (h *Handler) AddInstance(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetInstances(w http.ResponseWriter, r *http.Request) {
-	output, err := h.Client.db.Scan(r.Context(), &dynamodb.ScanInput{
-		TableName:        aws.String("CreeperKeeper"),
-		FilterExpression: aws.String("SK = :sk"),
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":sk": &types.AttributeValueMemberS{
-				Value: "instance",
-			},
-		},
+	out, err := h.Client.db.Scan(r.Context(), &dynamodb.ScanInput{
+		TableName: aws.String("CreeperKeeper"),
 	})
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())
@@ -82,9 +77,12 @@ func (h *Handler) GetInstances(w http.ResponseWriter, r *http.Request) {
 	}
 
 	instances := []string{}
-	for _, item := range output.Items {
+	for _, item := range out.Items {
 		instances = append(instances, item["PK"].(*types.AttributeValueMemberS).Value)
 	}
+
+	fmt.Println(instances)
+	fmt.Println(out.Items)
 
 	response, err := json.Marshal(instances)
 	if err != nil {
