@@ -12,7 +12,7 @@ root.render(
     authorizationParams={{
       redirect_uri: window.location.origin,
       audience: "creeper-keeper-resource",
-      scope: "read:all",
+      scope: "read:all write:all",
     }}
   >
     <App />
