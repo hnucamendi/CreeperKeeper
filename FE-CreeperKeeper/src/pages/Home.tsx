@@ -5,7 +5,7 @@ import Logout from "../component/Logout";
 
 
 export default function Home() {
-  const { loginWithRedirect, isAuthenticated, getAccessTokenSilently } = useAuth0();
+  const { isAuthenticated, getAccessTokenSilently } = useAuth0();
   const ck_url = "https://app.creeperkeeper.com";
   const [currentInstance, setCurrentInstance] = useState("");
   const [start, setStart] = useState("")
