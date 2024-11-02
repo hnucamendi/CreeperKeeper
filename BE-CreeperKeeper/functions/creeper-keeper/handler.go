@@ -45,13 +45,13 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	command := `tmux new -d -s minecraft "echo -e 'yes' | ./start.sh"`
+	commands := []string{`tmux new -d -s minecraft "echo -e 'yes' | ./start.sh"`}
 
 	input := &ssm.SendCommandInput{
 		DocumentName: aws.String("AWS-RunShellScript"),
 		InstanceIds:  []string{ck.InstanceID},
 		Parameters: map[string][]string{
-			"commands": {command},
+			"commands": commands,
 		},
 	}
 
@@ -77,13 +77,13 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	command := "tmux send-keys -t minecraft 'C-c'"
+	commands := []string{"tmux send-keys -t minecraft 'C-c'"}
 
 	input := &ssm.SendCommandInput{
 		DocumentName: aws.String("AWS-RunShellScript"),
 		InstanceIds:  []string{ck.InstanceID},
 		Parameters: map[string][]string{
-			"commands": {command},
+			"commands": commands,
 		},
 	}
 
