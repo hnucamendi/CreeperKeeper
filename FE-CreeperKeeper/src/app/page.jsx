@@ -43,7 +43,9 @@ export default function Home() {
     if (authToken) {
       fetchInstances();
     }
-  }, [authToken]);
+
+    console.log({ instances });
+  }, [authToken, instances]);
 
   const getAuth = () => {
     return "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkpPcW9POTU4MDFzUmVyTnBza19lSyJ9.eyJpc3MiOiJodHRwczovL2Rldi1ieG4yNDVsNmJlMnl6aGlsLnVzLmF1dGgwLmNvbS8iLCJzdWIiOiJIdWd0eFBkQ01kaThQbXZVWEM2bHc4bEVtNnU1SmFleEBjbGllbnRzIiwiYXVkIjoiY3JlZXBlci1rZWVwZXItcmVzb3VyY2UiLCJpYXQiOjE3MzA1NTk0MDAsImV4cCI6MTczMDY0NTgwMCwic2NvcGUiOiJyZWFkOmFsbCB3cml0ZTphbGwiLCJndHkiOiJjbGllbnQtY3JlZGVudGlhbHMiLCJhenAiOiJIdWd0eFBkQ01kaThQbXZVWEM2bHc4bEVtNnU1SmFleCJ9.gAvRdrFjeP26pUna7-MkcbUa-MR1iE6arP8f2D_yXHSrz4jqgdgeJFhyTVUP__EbrT5UIG8KbOlLyLkaYeB2vkgpsCprUX0RniG7UVR3ZxBAZQU-Po-qyWZjZL4Q_vwY4oiVYnWwLkLGjBBPVES8P7VDlfy_F3MnVLZyM-scs3ElIzMGNC63zbbpLO_xNTA8sV-2mjjnK1TH0ovL7HN8GZWML9y7-9bfTtt1va4_rVn8cFblsJIEM2VSs39b-o42on1MZ00U-pmEIThGNRrf3akt6E0uOvHT-ERlEhb3F_rDlslL2e2soDuZp3du6mVl374y2WjwrQVYG_DBrEiygQ"
@@ -122,11 +124,13 @@ export default function Home() {
           <h1>Select Instance</h1>
           <select onChange={handleSetInstance}>
             <option value="">None</option>
-            {instances.map((instance, i) => (
-              <h1>
-                {instance} {i}
-              </h1>
-            ))}
+            {/* {
+              instances.map((instance, i) => (
+                <h1>
+                  {instance} {i}
+                </h1>
+              ))
+            } */}
           </select>
         </div>
         <div>

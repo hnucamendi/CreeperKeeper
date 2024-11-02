@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -157,11 +156,12 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 
 func WriteResponse(w http.ResponseWriter, code int, message string) {
 	w.WriteHeader(code)
-	m := fmt.Sprintf(`{"message": %s}`, message)
-	jMessage, err := json.Marshal(m)
+	response := map[string]string{"message": message}
+	jMessage, err := json.Marshal(response)
 	if err != nil {
-		w.Write([]byte(`{"message": "Internal Server Error"}`))
+		http.Error(w, `{"message": "Internal Server Error"}`, http.StatusInternalServerError)
 		return
 	}
-	w.Write([]byte(jMessage))
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jMessage)
 }
