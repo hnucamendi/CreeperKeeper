@@ -7,11 +7,9 @@ permissions:
   id-token: write
 jobs:
   deploy_react:
-    uses: hnucamendi/shared-gha-workflows/.github/workflows/deploy-next.yml@master
+    uses: hnucamendi/shared-gha-workflows/.github/workflows/deploy-react.yml@master
     with:
-      cloudfront_distribution_id: "EKI8FX9WU1KYO"
       working_directory: "./FE-CreeperKeeper"
       s3_bucket: "www.creeperkeeper.com"
-      build_directory: ".next"
       node_version: 20
     secrets: inherit
