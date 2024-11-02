@@ -1,11 +1,9 @@
-"use client"
-
 import { useState, useEffect } from "react";
 
-export default function Home() {
+export default function App() {
   const ck_url = "https://app.creeperkeeper.com";
   const [currentInstance, setCurrentInstance] = useState("");
-  const [start, setStart] = useState(null)
+  const [start, setStart] = useState("")
   const [instances, setInstances] = useState([]);
   const [authToken, setAuthToken] = useState("");
 
@@ -52,11 +50,11 @@ export default function Home() {
     return "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkpPcW9POTU4MDFzUmVyTnBza19lSyJ9.eyJpc3MiOiJodHRwczovL2Rldi1ieG4yNDVsNmJlMnl6aGlsLnVzLmF1dGgwLmNvbS8iLCJzdWIiOiJIdWd0eFBkQ01kaThQbXZVWEM2bHc4bEVtNnU1SmFleEBjbGllbnRzIiwiYXVkIjoiY3JlZXBlci1rZWVwZXItcmVzb3VyY2UiLCJpYXQiOjE3MzA1NTk0MDAsImV4cCI6MTczMDY0NTgwMCwic2NvcGUiOiJyZWFkOmFsbCB3cml0ZTphbGwiLCJndHkiOiJjbGllbnQtY3JlZGVudGlhbHMiLCJhenAiOiJIdWd0eFBkQ01kaThQbXZVWEM2bHc4bEVtNnU1SmFleCJ9.gAvRdrFjeP26pUna7-MkcbUa-MR1iE6arP8f2D_yXHSrz4jqgdgeJFhyTVUP__EbrT5UIG8KbOlLyLkaYeB2vkgpsCprUX0RniG7UVR3ZxBAZQU-Po-qyWZjZL4Q_vwY4oiVYnWwLkLGjBBPVES8P7VDlfy_F3MnVLZyM-scs3ElIzMGNC63zbbpLO_xNTA8sV-2mjjnK1TH0ovL7HN8GZWML9y7-9bfTtt1va4_rVn8cFblsJIEM2VSs39b-o42on1MZ00U-pmEIThGNRrf3akt6E0uOvHT-ERlEhb3F_rDlslL2e2soDuZp3du6mVl374y2WjwrQVYG_DBrEiygQ"
   }
 
-  const handleSetInstance = (e) => {
+  const handleSetInstance = (e: any) => {
     setCurrentInstance(e.target.value)
   }
 
-  const handleAddInstance = async (e) => {
+  const handleAddInstance = async (e: any) => {
     e.preventDefault();
     setAddInstance("");
     const path = "addInstance";
@@ -187,6 +185,7 @@ export default function Home() {
         </div>
         <div className="w-full p-4 border rounded shadow">
           <h1 className="text-xl font-bold mb-4">Add an Instance</h1>
+          <h3>{addInstance}</h3>
           <form onSubmit={handleAddInstance} className="flex flex-col gap-4">
             <input
               type="text"
@@ -207,3 +206,4 @@ export default function Home() {
     </div>
   );
 }
+
