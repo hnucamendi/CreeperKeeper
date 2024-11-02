@@ -80,13 +80,7 @@ func (h *Handler) GetInstances(w http.ResponseWriter, r *http.Request) {
 		instances = append(instances, item["PK"].(*types.AttributeValueMemberS).Value)
 	}
 
-	response, err := json.Marshal(instances)
-	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	WriteResponse(w, http.StatusOK, string(response))
+	WriteResponse(w, http.StatusOK, instances)
 }
 
 func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
@@ -154,7 +148,7 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	WriteResponse(w, http.StatusOK, "Server stopping")
 }
 
-func WriteResponse(w http.ResponseWriter, code int, message string) {
+func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
 	w.WriteHeader(code)
 	response := map[string]interface{}{"message": message}
 	jMessage, err := json.Marshal(response)
