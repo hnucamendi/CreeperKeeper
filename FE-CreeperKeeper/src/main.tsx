@@ -10,9 +10,13 @@ root.render(
     domain="dev-bxn245l6be2yzhil.us.auth0.com"
     clientId="Ne5QmRSrbFuXW9p0ahbQUrIETB6lWhQL"
     authorizationParams={{
-      redirect_uri: window.location.origin
+      redirect_uri: window.location.origin,
+      audience: "creeper-keeper-resource",
+      scope: "read:all",
     }}
   >
     <App />
   </Auth0Provider>,
 )
+
+
