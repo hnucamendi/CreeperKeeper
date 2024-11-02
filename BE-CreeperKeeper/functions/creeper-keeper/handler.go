@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -156,6 +157,6 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 
 func WriteResponse(w http.ResponseWriter, code int, message string) {
 	w.WriteHeader(code)
-	message = `{"message": "` + message + `"}`
+	message = fmt.Sprintf(`{"message": %s}`, message)
 	w.Write([]byte(message))
 }

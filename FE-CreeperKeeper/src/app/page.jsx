@@ -10,17 +10,20 @@ export default function Home() {
   const [authToken, setAuthToken] = useState("");
 
   useEffect(() => {
+    const token = getAuth();
+    setAuthToken(`Bearer ${token}`);
+  }, []);
+
+  useEffect(() => {
     const fetchInstances = async () => {
       const path = "getInstances";
       const url = `${ck_url}/${path}`;
-
-      setAuthToken(`Bearer ${getAuth()}`);
 
       const body = {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${getAuth()}`,
+          "Authorization": authToken,
         },
       };
 
@@ -29,18 +32,21 @@ export default function Home() {
         if (!req.ok) {
           throw new Error(`HTTP error! status: ${req.status}`);
         }
-        const res = await req.json(); // Parse the response as JSON
+        const res = await req.json() // Parse the response as JSON
         setInstances(res.message);
       } catch (error) {
+        setInstances([]);
         console.error("Error getting instances:", error);
       }
     };
 
-    fetchInstances();
-  }, []);
+    if (authToken) {
+      fetchInstances();
+    }
+  }, [authToken]);
 
   const getAuth = () => {
-    return "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkpPcW9POTU4MDFzUmVyTnBza19lSyJ9.eyJpc3MiOiJodHRwczovL2Rldi1ieG4yNDVsNmJlMnl6aGlsLnVzLmF1dGgwLmNvbS8iLCJzdWIiOiJIdWd0eFBkQ01kaThQbXZVWEM2bHc4bEVtNnU1SmFleEBjbGllbnRzIiwiYXVkIjoiY3JlZXBlci1rZWVwZXItcmVzb3VyY2UiLCJpYXQiOjE3MzA1NTE3MDIsImV4cCI6MTczMDYzODEwMiwic2NvcGUiOiJyZWFkOmFsbCB3cml0ZTphbGwiLCJndHkiOiJjbGllbnQtY3JlZGVudGlhbHMiLCJhenAiOiJIdWd0eFBkQ01kaThQbXZVWEM2bHc4bEVtNnU1SmFleCJ9.X_bF3FaRePz1Lmghjp8QiUGte66pxRECIEA6nRCjMpnbLB_ur7rhlsmuqWqPzWofQlfPezns-SizbDAw04T9wCBEYvum4ynurfs0LxutYPSzfXlzb3ukyF3xaNp-uBFAgCm_GfojBR1vtU6WrTwm6AjSvBc7Ww5mS7838yIWA_VV50jaD1lBvZxSrU7rqFgcefQm4a5Vm8901XvQLxvqnxDWdPZJbhO6hAiIS_gb1_V1wcBz1D2C02nyk3wk-g1JGtucOYfPFF8sz-k1zAqjyKVVD2COrAFJwA0CCJM1xgExz1geEA0D08sMOUEb-VWis7TaXe6GJ2D527XEC8GqJw"
+    return "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkpPcW9POTU4MDFzUmVyTnBza19lSyJ9.eyJpc3MiOiJodHRwczovL2Rldi1ieG4yNDVsNmJlMnl6aGlsLnVzLmF1dGgwLmNvbS8iLCJzdWIiOiJIdWd0eFBkQ01kaThQbXZVWEM2bHc4bEVtNnU1SmFleEBjbGllbnRzIiwiYXVkIjoiY3JlZXBlci1rZWVwZXItcmVzb3VyY2UiLCJpYXQiOjE3MzA1NTk0MDAsImV4cCI6MTczMDY0NTgwMCwic2NvcGUiOiJyZWFkOmFsbCB3cml0ZTphbGwiLCJndHkiOiJjbGllbnQtY3JlZGVudGlhbHMiLCJhenAiOiJIdWd0eFBkQ01kaThQbXZVWEM2bHc4bEVtNnU1SmFleCJ9.gAvRdrFjeP26pUna7-MkcbUa-MR1iE6arP8f2D_yXHSrz4jqgdgeJFhyTVUP__EbrT5UIG8KbOlLyLkaYeB2vkgpsCprUX0RniG7UVR3ZxBAZQU-Po-qyWZjZL4Q_vwY4oiVYnWwLkLGjBBPVES8P7VDlfy_F3MnVLZyM-scs3ElIzMGNC63zbbpLO_xNTA8sV-2mjjnK1TH0ovL7HN8GZWML9y7-9bfTtt1va4_rVn8cFblsJIEM2VSs39b-o42on1MZ00U-pmEIThGNRrf3akt6E0uOvHT-ERlEhb3F_rDlslL2e2soDuZp3du6mVl374y2WjwrQVYG_DBrEiygQ"
   }
 
   const handleSetInstance = (e) => {
