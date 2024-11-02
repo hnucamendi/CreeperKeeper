@@ -156,7 +156,7 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 
 func WriteResponse(w http.ResponseWriter, code int, message string) {
 	w.WriteHeader(code)
-	response := map[string]string{"message": message}
+	response := map[string]interface{}{"message": message}
 	jMessage, err := json.Marshal(response)
 	if err != nil {
 		http.Error(w, `{"message": "Internal Server Error"}`, http.StatusInternalServerError)
