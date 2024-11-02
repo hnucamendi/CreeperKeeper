@@ -157,8 +157,8 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 
 func WriteResponse(w http.ResponseWriter, code int, message string) {
 	w.WriteHeader(code)
-	message = fmt.Sprintf(`{"message": %q}`, message)
-	jMessage, err := json.Marshal(message)
+	m := fmt.Sprintf(`{"message": %s}`, message)
+	jMessage, err := json.Marshal(m)
 	if err != nil {
 		w.Write([]byte(`{"message": "Internal Server Error"}`))
 		return
