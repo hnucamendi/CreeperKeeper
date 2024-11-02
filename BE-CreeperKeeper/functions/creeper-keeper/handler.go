@@ -98,7 +98,6 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 }
 
 func WriteResponse(w http.ResponseWriter, code int, message string) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(code)
 	w.Write([]byte(message))
 }
