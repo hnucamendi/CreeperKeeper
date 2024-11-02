@@ -45,13 +45,14 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	commands := []string{`tmux new -d -s minecraft "echo -e 'yes' | ./start.sh"`}
+	commands := []string{"pwd", `tmux new -d -s minecraft "echo -e 'yes' | ./start.sh"`}
 
 	input := &ssm.SendCommandInput{
 		DocumentName: aws.String("AWS-RunShellScript"),
 		InstanceIds:  []string{ck.InstanceID},
 		Parameters: map[string][]string{
-			"commands": commands,
+			"commands":         commands,
+			"workingDirectory": {"/home/ec2-user/Minecraft"},
 		},
 	}
 
