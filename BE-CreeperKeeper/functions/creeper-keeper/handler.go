@@ -230,6 +230,8 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
+	fmt.Println("TAMO", token)
+
 	resp, err := h.Client.Client.Do(req)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())
