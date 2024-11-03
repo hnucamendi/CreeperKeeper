@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -28,6 +29,7 @@ type C struct {
 }
 
 func init() {
+	log.Println("Starting from Cold Start")
 	mux = http.NewServeMux()
 
 	ssmcfg, err := config.LoadDefaultConfig(context.TODO())
@@ -47,11 +49,15 @@ func init() {
 		TenantURL: "https://dev-bxn245l6be2yzhil.us.auth0.com/oauth/token",
 	}
 
+	hc := &http.Client{}
+
+	log.Printf("clients initiated: ssm: %v db: %v jwt: %v http: %v", sc != nil, db != nil, j != nil, hc != nil)
+
 	c := &C{
 		sc:     sc,
 		db:     db,
 		j:      j,
-		Client: &http.Client{},
+		Client: hc,
 	}
 
 	h := NewHandler(c)

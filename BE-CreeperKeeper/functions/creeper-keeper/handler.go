@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -47,6 +48,7 @@ func (ck *CreeperKeeper) unmarshallRequest(b io.ReadCloser) error {
 }
 
 func (h *Handler) AddInstance(w http.ResponseWriter, r *http.Request) {
+	log.Println("Landed in AddInstance Route")
 	ck := &CreeperKeeper{}
 	err := ck.unmarshallRequest(r.Body)
 	if err != nil {
@@ -79,6 +81,7 @@ func (h *Handler) AddInstance(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetInstances(w http.ResponseWriter, r *http.Request) {
+	log.Println("Landed in GetInstances Route")
 	out, err := h.Client.db.Scan(r.Context(), &dynamodb.ScanInput{
 		TableName: aws.String("CreeperKeeper"),
 	})
@@ -96,6 +99,7 @@ func (h *Handler) GetInstances(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
+	log.Println("Landed in StartServer Route")
 	ck := &CreeperKeeper{}
 	err := ck.unmarshallRequest(r.Body)
 	if err != nil {
@@ -107,6 +111,8 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		WriteResponse(w, http.StatusBadRequest, "instance_id must be provided")
 		return
 	}
+
+	log.Println("Instance ID:", ck.InstanceID)
 
 	token, err := getToken(h.Client.j, h.Client.Client, h.Client.sc)
 	if err != nil {
@@ -135,19 +141,22 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
+	log.Println("Starting EC2 instance")
 	resp, err := h.Client.Client.Do(req)
 	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		WriteResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to start ec2 instance: %s", err.Error()))
 		return
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		log.Println("Error starting server", resp.StatusCode, err)
 		WriteResponse(w, http.StatusInternalServerError, "Error starting server")
 		return
 	}
 
+	log.Println("Starting Minecraft server")
 	commands := []string{"pwd", `tmux new -d -s minecraft "echo -e 'yes' | ./start.sh"`}
 
 	input := &ssm.SendCommandInput{
@@ -161,7 +170,7 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 
 	_, err = h.Client.sc.SendCommand(r.Context(), input)
 	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		WriteResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to start minecraft server: %s", err.Error()))
 		return
 	}
 
@@ -181,24 +190,23 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Println("Instance ID:", ck.InstanceID)
+
+	log.Println("Stopping Minecraft server")
 	commands := []string{"tmux send-keys -t minecraft 'C-c'"}
 
 	input := &ssm.SendCommandInput{
 		DocumentName: aws.String("AWS-RunShellScript"),
 		InstanceIds:  []string{ck.InstanceID},
 		Parameters: map[string][]string{
-			"commands": commands,
+			"commands":         commands,
+			"workingDirectory": {"/home/ec2-user/Minecraft"},
 		},
 	}
 
 	_, err = h.Client.sc.SendCommand(r.Context(), input)
 	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	if h.Client.j == nil {
-		WriteResponse(w, http.StatusInternalServerError, "JWT is nil")
+		WriteResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to stop minecraft server: %s", err.Error()))
 		return
 	}
 
@@ -229,6 +237,7 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
+	log.Println("Stopping EC2 instance")
 	resp, err := h.Client.Client.Do(req)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())
@@ -238,6 +247,7 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		log.Println("Error stopping server", resp.StatusCode, err)
 		WriteResponse(w, http.StatusInternalServerError, "Error stopping server")
 		return
 	}
@@ -253,7 +263,6 @@ func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
 		http.Error(w, `{"message": "Internal Server Error"}`, http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
 	w.Write(jMessage)
 }
 
@@ -264,7 +273,7 @@ func loadEnvVars(ctx context.Context, sc *ssm.Client) (clientID string, clientSe
 		WithDecryption: aws.Bool(true),
 	})
 	if err != nil {
-		return "", "", "", err
+		return "", "", "", fmt.Errorf("failed to get parameters: %w", err)
 	}
 
 	for _, p := range out.Parameters {
