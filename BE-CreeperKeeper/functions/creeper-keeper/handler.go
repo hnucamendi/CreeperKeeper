@@ -144,7 +144,7 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		WriteResponse(w, http.StatusInternalServerError, "Error stopping server")
+		WriteResponse(w, http.StatusInternalServerError, "Error starting server")
 		return
 	}
 
