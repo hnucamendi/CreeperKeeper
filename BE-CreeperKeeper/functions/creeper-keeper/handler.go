@@ -252,34 +252,40 @@ func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
 	w.Write(jMessage)
 }
 
-func loadEnvVars(ctx context.Context, sc *ssm.Client) (map[string]string, error) {
-	envs := []string{"/ck/jwt/client_id", "/ck/jwt/client_secret", "/ck/jwt/audience"}
+func loadEnvVars(ctx context.Context, sc *ssm.Client) (clientID string, clientSecret string, audience string, err error) {
+	envs := []string{"/statemanager/jwt/client_id", "/statemanager/jwt/client_secret", "/statemanager/jwt/audience"}
 	out, err := sc.GetParameters(ctx, &ssm.GetParametersInput{
 		Names:          envs,
 		WithDecryption: aws.Bool(true),
 	})
 	if err != nil {
-		return nil, err
+		return "", "", "", err
 	}
 
-	envVars := map[string]string{}
-	for _, param := range out.Parameters {
-		envVars[*param.Name] = *param.Value
+	for _, p := range out.Parameters {
+		switch *p.Name {
+		case "/statemanager/jwt/client_id":
+			clientID = *p.Value
+		case "/statemanager/jwt/client_secret":
+			clientSecret = *p.Value
+		case "/statemanager/jwt/audience":
+			audience = *p.Value
+		}
 	}
 
-	return envVars, nil
+	return clientID, clientSecret, audience, nil
 }
 
 func getToken(j *jwt.JWT, hc *http.Client, sc *ssm.Client) (string, error) {
-	v, err := loadEnvVars(context.Background(), sc)
+	clientID, clientSecret, audience, err := loadEnvVars(context.Background(), sc)
 	if err != nil {
 		return "", err
 	}
 
 	token, err := j.GenerateToken(hc, &jwt.CreateJWTConfig{
-		ClientID:     v["/ck/jwt/client_id"],
-		ClientSecret: v["/ck/jwt/client_secret"],
-		Audience:     v["/ck/jwt/audience"],
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		Audience:     audience,
 	})
 	if err != nil {
 		return "", err
