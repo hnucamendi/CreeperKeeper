@@ -135,8 +135,16 @@ func (h *Handler) GetInstances(w http.ResponseWriter, r *http.Request) {
 
 		defer resp.Body.Close()
 
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			WriteResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		log.Println(string(b))
+
 		if resp.StatusCode != http.StatusOK {
-			log.Println("Error getting server status", resp.StatusCode, err)
+			log.Println("Error getting server status", resp.StatusCode)
 			WriteResponse(w, http.StatusInternalServerError, "Error getting server status")
 			return
 		}
