@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -9,6 +12,15 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"github.com/hnucamendi/jwt-go/jwt"
+)
+
+type EC2State int
+
+const (
+	STOP EC2State = iota
+	START
+	TERMINATE
 )
 
 type Handler struct {
@@ -113,6 +125,46 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	token, err := getToken(h.Client.j, h.Client.Client, h.Client.sc)
+	if err != nil {
+		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	body := map[string]interface{}{
+		"instanceID":   ck.InstanceID,
+		"desiredState": START,
+	}
+
+	jb, err := json.Marshal(body)
+	if err != nil {
+		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	ec2URL := "https://statemanager.creeperkeeper.com"
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/ec2", ec2URL), bytes.NewBuffer(jb))
+	if err != nil {
+		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+
+	resp, err := h.Client.Client.Do(req)
+	if err != nil {
+		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		WriteResponse(w, http.StatusInternalServerError, "Error stopping server")
+		return
+	}
+
 	WriteResponse(w, http.StatusOK, "Server starting")
 }
 
@@ -145,6 +197,46 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	token, err := getToken(h.Client.j, h.Client.Client, h.Client.sc)
+	if err != nil {
+		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	body := map[string]interface{}{
+		"instanceID":   ck.InstanceID,
+		"desiredState": STOP,
+	}
+
+	jb, err := json.Marshal(body)
+	if err != nil {
+		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	ec2URL := "https://statemanager.creeperkeeper.com"
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/ec2", ec2URL), bytes.NewBuffer(jb))
+	if err != nil {
+		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+
+	resp, err := h.Client.Client.Do(req)
+	if err != nil {
+		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		WriteResponse(w, http.StatusInternalServerError, "Error stopping server")
+		return
+	}
+
 	WriteResponse(w, http.StatusOK, "Server stopping")
 }
 
@@ -158,4 +250,40 @@ func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jMessage)
+}
+
+func loadEnvVars(ctx context.Context, sc *ssm.Client) (map[string]string, error) {
+	envs := []string{"/ck/jwt/client_id", "/ck/jwt/client_secret", "/ck/jwt/audience"}
+	out, err := sc.GetParameters(ctx, &ssm.GetParametersInput{
+		Names:          envs,
+		WithDecryption: aws.Bool(true),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	envVars := map[string]string{}
+	for _, param := range out.Parameters {
+		envVars[*param.Name] = *param.Value
+	}
+
+	return envVars, nil
+}
+
+func getToken(j *jwt.JWT, hc *http.Client, sc *ssm.Client) (string, error) {
+	v, err := loadEnvVars(context.Background(), sc)
+	if err != nil {
+		return "", err
+	}
+
+	token, err := j.GenerateToken(hc, &jwt.CreateJWTConfig{
+		ClientID:     v["/ck/jwt/client_id"],
+		ClientSecret: v["/ck/jwt/client_secret"],
+		Audience:     v["/ck/jwt/audience"],
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }

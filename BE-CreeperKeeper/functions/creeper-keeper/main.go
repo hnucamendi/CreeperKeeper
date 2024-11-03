@@ -10,17 +10,21 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
+	"github.com/hnucamendi/jwt-go/jwt"
 )
 
 var (
 	mux *http.ServeMux
 	sc  *ssm.Client
 	db  *dynamodb.Client
+	j   *jwt.JWT
 )
 
 type C struct {
 	sc *ssm.Client
 	db *dynamodb.Client
+	j  *jwt.JWT
+	*http.Client
 }
 
 func init() {
@@ -40,8 +44,10 @@ func init() {
 	db = dynamodb.NewFromConfig(dbcfg)
 
 	c := &C{
-		sc: sc,
-		db: db,
+		sc:     sc,
+		db:     db,
+		j:      j,
+		Client: &http.Client{},
 	}
 
 	h := NewHandler(c)

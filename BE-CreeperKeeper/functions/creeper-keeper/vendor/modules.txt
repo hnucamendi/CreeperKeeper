@@ -122,6 +122,9 @@ github.com/aws/smithy-go/waiter
 ## explicit; go 1.21
 github.com/awslabs/aws-lambda-go-api-proxy/core
 github.com/awslabs/aws-lambda-go-api-proxy/httpadapter
+# github.com/hnucamendi/jwt-go v1.0.0
+## explicit; go 1.23.2
+github.com/hnucamendi/jwt-go/jwt
 # github.com/jmespath/go-jmespath v0.4.0
 ## explicit; go 1.14
 github.com/jmespath/go-jmespath
