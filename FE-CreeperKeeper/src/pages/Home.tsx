@@ -8,7 +8,8 @@ export default function Home() {
   const { isAuthenticated, getAccessTokenSilently } = useAuth0();
   const ck_url = "https://app.creeperkeeper.com";
   const [currentInstance, setCurrentInstance] = useState("");
-  const [start, setStart] = useState("")
+  const [start, setStart] = useState({ ip: "", success: "" })
+  const [stop, setStop] = useState("")
   const [instances, setInstances] = useState([]);
   const [addInstance, setAddInstance] = useState("");
   const [newInstanceID, setNewInstanceID] = useState("");
@@ -118,10 +119,11 @@ export default function Home() {
         throw new Error(`HTTP error! status: ${req.status}`);
       }
       const res = await req.json(); // Parse the response as JSON
-      setStart(res.message)
+      console.log("Start response:", res)
+      setStart({ ip: res.message.ip, success: res.message.success })
     } catch (error) {
       console.error("Error starting the server:", error);
-      setStart("Error starting the server")
+      setStart({ ip: "", success: "Error starting the server" })
     }
   };
 
@@ -147,10 +149,10 @@ export default function Home() {
         throw new Error(`HTTP error! status: ${req.status}`);
       }
       const res = await req.json(); // Parse the response as JSON
-      setStart(res.message)
+      setStop(res.message)
     } catch (error) {
       console.error("Error stopping the server:", error);
-      setStart("Error stopping the server")
+      setStop("Error stopping the server")
     }
   };
 
@@ -175,27 +177,33 @@ export default function Home() {
           </div>
           <div className="w-full sm:w-1/2 p-4 border rounded shadow">
             <h1 className="text-xl font-bold mb-4">Manage Server</h1>
-            <h2 className="text-lg mb-4">{start}</h2>
-            <button
-              className={`${currentInstance
-                ? "bg-blue-500 hover:bg-blue-700 text-white"
-                : "bg-gray-500 text-gray-300 cursor-not-allowed"
-                } py-2 px-4 rounded mb-2 w-full`}
-              onClick={handleStartMCServer}
-              disabled={!currentInstance}
-            >
-              Start
-            </button>
-            <button
-              className={`${currentInstance
-                ? "bg-blue-500 hover:bg-blue-700 text-white"
-                : "bg-gray-500 text-gray-300 cursor-not-allowed"
-                } py-2 px-4 rounded w-full`}
-              onClick={handleStopMCServer}
-              disabled={!currentInstance}
-            >
-              Stop
-            </button>
+            <div>
+              <h2 className="text-lg mb-4">{`IP Address: ${start.ip}, ${start.success}`}</h2>
+              <button
+                className={`${currentInstance
+                  ? "bg-blue-500 hover:bg-blue-700 text-white"
+                  : "bg-gray-500 text-gray-300 cursor-not-allowed"
+                  } py-2 px-4 rounded mb-2 w-full`}
+                onClick={handleStartMCServer}
+                disabled={!currentInstance}
+              >
+                Start
+              </button>
+            </div>
+
+            <div>
+              <h2 className="text-lg mb-4">{stop}</h2>
+              <button
+                className={`${currentInstance
+                  ? "bg-blue-500 hover:bg-blue-700 text-white"
+                  : "bg-gray-500 text-gray-300 cursor-not-allowed"
+                  } py-2 px-4 rounded w-full`}
+                onClick={handleStopMCServer}
+                disabled={!currentInstance}
+              >
+                Stop
+              </button>
+            </div>
           </div>
           <div className="w-full p-4 border rounded shadow">
             <h1 className="text-xl font-bold mb-4">Add an Instance</h1>

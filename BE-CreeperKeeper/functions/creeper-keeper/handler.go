@@ -156,6 +156,12 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	log.Println("Starting Minecraft server")
 	commands := []string{"pwd", `tmux new -d -s minecraft "echo -e 'yes' | ./start.sh"`}
 
@@ -174,7 +180,7 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	WriteResponse(w, http.StatusOK, "Server starting")
+	WriteResponse(w, http.StatusOK, string(b))
 }
 
 func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
