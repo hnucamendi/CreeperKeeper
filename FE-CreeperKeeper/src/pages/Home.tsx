@@ -119,8 +119,8 @@ export default function Home() {
         throw new Error(`HTTP error! status: ${req.status}`);
       }
       const res = await req.json(); // Parse the response as JSON
-      console.log("Start response:", res)
-      setStart({ ip: res.message.ip, success: res.message.success })
+      const resJSON = JSON.parse(res.message).message
+      setStart({ ip: resJSON.ip, success: resJSON.success })
     } catch (error) {
       console.error("Error starting the server:", error);
       setStart({ ip: "", success: "Error starting the server" })
@@ -152,7 +152,7 @@ export default function Home() {
       setStop(res.message)
     } catch (error) {
       console.error("Error stopping the server:", error);
-      setStop("Error stopping the server")
+      setStop("Error server is probably already stopped")
     }
   };
 
@@ -204,25 +204,6 @@ export default function Home() {
                 Stop
               </button>
             </div>
-          </div>
-          <div className="w-full p-4 border rounded shadow">
-            <h1 className="text-xl font-bold mb-4">Add an Instance</h1>
-            <h3>{addInstance}</h3>
-            <form onSubmit={handleAddInstance} className="flex flex-col gap-4">
-              <input
-                type="text"
-                placeholder="Instance Name"
-                value={newInstanceID}
-                onChange={(e) => setNewInstanceID(e.target.value)}
-                className="p-2 border rounded"
-              />
-              <button
-                type="submit"
-                className="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded"
-              >
-                Add
-              </button>
-            </form>
           </div>
         </main>
       </div>
