@@ -21,14 +21,12 @@ export default function Home() {
         const accessToken = await getAccessTokenSilently();
 
         setAuthToken(`Bearer ${accessToken}`);
-        console.log("Access Token: ", accessToken);
       } catch (e) {
         console.error("Error getting access token:", e);
       }
     };
 
     if (isAuthenticated) {
-      console.log("Authenticated", isAuthenticated);
       getAuthToken();
     }
   });
@@ -45,8 +43,6 @@ export default function Home() {
           "Authorization": authToken,
         },
       };
-
-      console.log(body)
 
       try {
         const req = await fetch(url, body);
@@ -138,7 +134,7 @@ export default function Home() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `authToken`,
+        "Authorization": authToken,
       },
       body: JSON.stringify({
         instanceID: currentInstance,
