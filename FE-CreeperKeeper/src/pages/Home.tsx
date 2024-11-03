@@ -11,8 +11,6 @@ export default function Home() {
   const [start, setStart] = useState({ ip: "", success: "" })
   const [stop, setStop] = useState("")
   const [instances, setInstances] = useState([]);
-  const [addInstance, setAddInstance] = useState("");
-  const [newInstanceID, setNewInstanceID] = useState("");
   const [authToken, setAuthToken] = useState("");
 
 
@@ -51,6 +49,7 @@ export default function Home() {
           throw new Error(`HTTP error! status: ${req.status}`);
         }
         const res = await req.json() // Parse the response as JSON
+        console.log(res)
         setInstances(res.message);
       } catch (error) {
         setInstances([]);
@@ -65,36 +64,6 @@ export default function Home() {
 
   const handleSetInstance = (e: any) => {
     setCurrentInstance(e.target.value)
-  }
-
-  const handleAddInstance = async (e: any) => {
-    e.preventDefault();
-    setAddInstance("");
-    const path = "addInstance";
-    const url = `${ck_url}/${path}`;
-
-    const body = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": authToken,
-      },
-      body: JSON.stringify({
-        instanceID: newInstanceID,
-      }),
-    };
-
-    try {
-      const req = await fetch(url, body);
-      if (!req.ok) {
-        throw new Error(`HTTP error! status: ${req.status}`);
-      }
-      const res = await req.json() // Parse the response as JSON
-      setAddInstance(res.message);
-    } catch (error) {
-      setAddInstance("Error adding the instance")
-      console.error("Error getting instances:", error);
-    }
   }
 
   const handleStartMCServer = async () => {

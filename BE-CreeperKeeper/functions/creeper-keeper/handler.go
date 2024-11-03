@@ -83,68 +83,6 @@ func (h *Handler) AddInstance(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetInstances(w http.ResponseWriter, r *http.Request) {
 	log.Println("Landed in GetInstances Route")
-	ck := &CreeperKeeper{}
-	err := ck.unmarshallRequest(r.Body)
-	if err != nil {
-		WriteResponse(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	if ck.InstanceID == "" {
-		WriteResponse(w, http.StatusBadRequest, "instance_id must be provided")
-		return
-	}
-
-	log.Println("Instance ID:", ck.InstanceID)
-
-	token, err := getToken(h.Client.j, h.Client.Client, h.Client.sc)
-	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	body := map[string]interface{}{
-		"instanceID":   ck.InstanceID,
-		"desiredState": DESCRIBE,
-	}
-
-	jb, err := json.Marshal(body)
-	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	ec2URL := "https://statemanager.creeperkeeper.com"
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/ec2", ec2URL), bytes.NewBuffer(jb))
-	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-
-	resp, err := h.Client.Client.Do(req)
-	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	defer resp.Body.Close()
-
-	var jrb map[string]string
-	err = json.NewDecoder(resp.Body).Decode(&jrb)
-	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		log.Println("Error getting server status", resp.StatusCode, err)
-		WriteResponse(w, http.StatusInternalServerError, "Error getting server status")
-		return
-	}
-
 	out, err := h.Client.db.Scan(r.Context(), &dynamodb.ScanInput{
 		TableName: aws.String("CreeperKeeper"),
 	})
@@ -153,12 +91,68 @@ func (h *Handler) GetInstances(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	instances := []map[string]string{}
+	instances := []string{}
 	for _, item := range out.Items {
-		instances = append(instances, map[string]string{"id": item["PK"].(*types.AttributeValueMemberS).Value, "status": jrb["message"]})
+		instances = append(instances, item["PK"].(*types.AttributeValueMemberS).Value)
 	}
 
-	WriteResponse(w, http.StatusOK, instances)
+	log.Println("Instance IDs:", instances)
+
+	token, err := getToken(h.Client.j, h.Client.Client, h.Client.sc)
+	if err != nil {
+		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	mappedInstances := map[string]string{}
+	for _, instance := range instances {
+		body := map[string]interface{}{
+			"instanceID":   instance,
+			"desiredState": DESCRIBE,
+		}
+
+		jb, err := json.Marshal(body)
+		if err != nil {
+			WriteResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		ec2URL := "https://statemanager.creeperkeeper.com"
+		req, err := http.NewRequest("GET", fmt.Sprintf("%s/ec2", ec2URL), bytes.NewBuffer(jb))
+		if err != nil {
+			WriteResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+
+		resp, err := h.Client.Client.Do(req)
+		if err != nil {
+			WriteResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			log.Println("Error getting server status", resp.StatusCode, err)
+			WriteResponse(w, http.StatusInternalServerError, "Error getting server status")
+			return
+		}
+
+		var jrb map[string]string
+		err = json.NewDecoder(resp.Body).Decode(&jrb)
+		if err != nil {
+			WriteResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		mappedInstances["id"] = instance
+		mappedInstances["status"] = jrb["status"]
+	}
+
+	WriteResponse(w, http.StatusOK, mappedInstances)
 }
 
 func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
