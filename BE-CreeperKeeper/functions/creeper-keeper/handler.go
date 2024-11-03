@@ -197,7 +197,6 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(h.Client.j, h.Client.j == nil)
 	if h.Client.j == nil {
 		WriteResponse(w, http.StatusInternalServerError, "JWT is nil")
 		return
@@ -229,8 +228,6 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-
-	fmt.Println("TAMO", token)
 
 	resp, err := h.Client.Client.Do(req)
 	if err != nil {
