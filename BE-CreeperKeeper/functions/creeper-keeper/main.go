@@ -43,6 +43,10 @@ func init() {
 	sc = ssm.NewFromConfig(ssmcfg)
 	db = dynamodb.NewFromConfig(dbcfg)
 
+	j = &jwt.JWT{
+		TenantURL: "https://dev-bxn245l6be2yzhil.us.auth0.com/oauth/token",
+	}
+
 	c := &C{
 		sc:     sc,
 		db:     db,

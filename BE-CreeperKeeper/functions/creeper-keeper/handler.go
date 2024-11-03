@@ -197,6 +197,12 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println(h.Client.j, h.Client.j == nil)
+	if h.Client.j == nil {
+		WriteResponse(w, http.StatusInternalServerError, "JWT is nil")
+		return
+	}
+
 	token, err := getToken(h.Client.j, h.Client.Client, h.Client.sc)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())
