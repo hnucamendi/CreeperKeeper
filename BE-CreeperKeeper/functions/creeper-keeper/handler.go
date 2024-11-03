@@ -108,23 +108,6 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	commands := []string{"pwd", `tmux new -d -s minecraft "echo -e 'yes' | ./start.sh"`}
-
-	input := &ssm.SendCommandInput{
-		DocumentName: aws.String("AWS-RunShellScript"),
-		InstanceIds:  []string{ck.InstanceID},
-		Parameters: map[string][]string{
-			"commands":         commands,
-			"workingDirectory": {"/home/ec2-user/Minecraft"},
-		},
-	}
-
-	_, err = h.Client.sc.SendCommand(r.Context(), input)
-	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
 	token, err := getToken(h.Client.j, h.Client.Client, h.Client.sc)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())
@@ -162,6 +145,23 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 
 	if resp.StatusCode != http.StatusOK {
 		WriteResponse(w, http.StatusInternalServerError, "Error stopping server")
+		return
+	}
+
+	commands := []string{"pwd", `tmux new -d -s minecraft "echo -e 'yes' | ./start.sh"`}
+
+	input := &ssm.SendCommandInput{
+		DocumentName: aws.String("AWS-RunShellScript"),
+		InstanceIds:  []string{ck.InstanceID},
+		Parameters: map[string][]string{
+			"commands":         commands,
+			"workingDirectory": {"/home/ec2-user/Minecraft"},
+		},
+	}
+
+	_, err = h.Client.sc.SendCommand(r.Context(), input)
+	if err != nil {
+		WriteResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
