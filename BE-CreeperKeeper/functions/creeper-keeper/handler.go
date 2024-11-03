@@ -118,7 +118,7 @@ func (h *Handler) GetInstances(w http.ResponseWriter, r *http.Request) {
 		}
 
 		ec2URL := "https://statemanager.creeperkeeper.com"
-		req, err := http.NewRequest("GET", fmt.Sprintf("%s/ec2", ec2URL), bytes.NewBuffer(jb))
+		req, err := http.NewRequest("POST", fmt.Sprintf("%s/ec2", ec2URL), bytes.NewBuffer(jb))
 		if err != nil {
 			WriteResponse(w, http.StatusInternalServerError, err.Error())
 			return
