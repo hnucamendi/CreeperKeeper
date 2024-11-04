@@ -12,7 +12,14 @@ export default function Home() {
   const [stop, setStop] = useState("")
   const [instances, setInstances] = useState([]);
   const [authToken, setAuthToken] = useState("");
+  const [loading, setLoading] = useState(false);
 
+
+
+  useEffect(() => {
+    setStart({ ip: "", success: "" });
+    setStop("");
+  }, [currentInstance])
 
   useEffect(() => {
     const getAuthToken = async () => {
@@ -48,10 +55,12 @@ export default function Home() {
         if (!req.ok) {
           throw new Error(`HTTP error! status: ${req.status}`);
         }
+        setLoading(true)
         const res = await req.json() // Parse the response as JSON
-        console.log(res)
+        setLoading(false)
         setInstances(res.message);
       } catch (error) {
+        setLoading(false)
         setInstances([]);
         console.error("Error getting instances:", error);
       }
@@ -67,6 +76,7 @@ export default function Home() {
   }
 
   const handleStartMCServer = async () => {
+    setStart({ ip: "", success: "" });
     const path = "start";
 
     const url = `${ck_url}/${path}`;
@@ -83,20 +93,24 @@ export default function Home() {
     }
 
     try {
+      setLoading(true)
       const req = await fetch(url, body);
       if (!req.ok) {
         throw new Error(`HTTP error! status: ${req.status}`);
       }
       const res = await req.json(); // Parse the response as JSON
+      setLoading(false)
       const resJSON = JSON.parse(res.message).message
       setStart({ ip: resJSON.ip, success: resJSON.success })
     } catch (error) {
+      setLoading(false)
       console.error("Error starting the server:", error);
       setStart({ ip: "", success: "Error starting the server" })
     }
   };
 
   const handleStopMCServer = async () => {
+    setStop("");
     const path = "stop";
 
     const url = `${ck_url}/${path}`;
@@ -113,11 +127,13 @@ export default function Home() {
     }
 
     try {
+      setLoading(true)
       const req = await fetch(url, body);
       if (!req.ok) {
         throw new Error(`HTTP error! status: ${req.status}`);
       }
       const res = await req.json(); // Parse the response as JSON
+      setLoading(false)
       setStop(res.message)
     } catch (error) {
       console.error("Error stopping the server:", error);
@@ -146,6 +162,7 @@ export default function Home() {
           </div>
           <div className="w-full sm:w-1/2 p-4 border rounded shadow">
             <h1 className="text-xl font-bold mb-4">Manage Server</h1>
+            {loading ? <h2 className="text-xl font-bold mb-4">Loading...</h2> : null}
             <div>
               <h2 className="text-lg mb-4">{`IP Address: ${start.ip}, ${start.success}`}</h2>
               <button
