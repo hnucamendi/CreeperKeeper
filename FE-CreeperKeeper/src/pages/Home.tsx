@@ -128,8 +128,8 @@ export default function Home() {
   return (
     isAuthenticated && (
       <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-4 sm:p-8 pb-20 gap-8 sm:gap-16 font-[family-name:var(--font-geist-sans)]">
+        <Logout />
         <main className="flex flex-col sm:flex-row gap-8 row-start-2 items-center sm:items-start w-full max-w-4xl">
-          <Logout />
           <div className="w-full sm:w-1/2 p-4 border rounded shadow">
             <h1 className="text-xl font-bold mb-4">Select Instance</h1>
             <select

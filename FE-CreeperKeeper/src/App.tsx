@@ -2,7 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import PropTypes from "prop-types";
 import Home from "./pages/Home";
-import Login from "./component/Login";
+import Login from "./pages/Login";
 import Logout from "./component/Logout";
 
 export default function App() {
