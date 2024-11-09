@@ -24,6 +24,13 @@ func init() {
 }
 
 func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) (events.APIGatewayProxyResponse, error) {
+
+	connectionID := event.RequestContext.ConnectionID
+	apiClient.PostToConnection(context.TODO(), &apigatewaymanagementapi.PostToConnectionInput{
+		ConnectionId: &connectionID,
+		Data:         []byte("Hello from the server!"),
+	})
+
 	return events.APIGatewayProxyResponse{StatusCode: http.StatusOK}, nil
 }
 
