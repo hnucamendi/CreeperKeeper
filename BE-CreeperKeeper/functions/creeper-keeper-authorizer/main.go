@@ -10,9 +10,7 @@ import (
 	"github.com/hnucamendi/jwt-go/jwt"
 )
 
-var (
-	j *jwt.JWTClient
-)
+var j *jwt.JWTClient
 
 func init() {
 	j = jwt.NewJWTClient(
@@ -20,48 +18,34 @@ func init() {
 	)
 }
 
-func generateAllowPolicy() events.APIGatewayCustomAuthorizerResponse {
-	return events.APIGatewayCustomAuthorizerResponse{
-		PrincipalID: "user",
-		PolicyDocument: events.APIGatewayCustomAuthorizerPolicy{
-			Version: "2012-10-17",
-			Statement: []events.IAMPolicyStatement{
-				{
-					Action:   []string{"*"},
-					Effect:   "Allow",
-					Resource: []string{"*"},
-				},
-			},
-		},
-	}
-}
-
-func generateDenyPolicy(arn string) events.APIGatewayCustomAuthorizerResponse {
-	return events.APIGatewayCustomAuthorizerResponse{
-		PrincipalID: "user",
+func generatePolicy(principalID, effect, resource string) events.APIGatewayCustomAuthorizerResponse {
+	policy := events.APIGatewayCustomAuthorizerResponse{
+		PrincipalID: principalID,
 		PolicyDocument: events.APIGatewayCustomAuthorizerPolicy{
 			Version: "2012-10-17",
 			Statement: []events.IAMPolicyStatement{
 				{
 					Action:   []string{"execute-api:Invoke"},
-					Effect:   "Deny",
-					Resource: []string{arn},
+					Effect:   effect,
+					Resource: []string{resource},
 				},
 			},
 		},
 	}
+	return policy
 }
 
 func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
-	token := strings.TrimSpace(strings.TrimPrefix(event.Headers["Authorization"], "Bearer"))
+	token := strings.TrimSpace(strings.TrimPrefix(event.Headers["Authorization"], "Bearer "))
 	log.Printf("Received message %+v", event)
 
 	err := j.ValidateToken(token)
 	if err != nil {
-		return generateAllowPolicy(), err
+		log.Printf("Token validation failed: %v", err)
+		return generatePolicy("user", "Deny", event.RequestContext.ResourcePath), nil
 	}
 
-	return generateAllowPolicy(), nil
+	return generatePolicy("user", "Allow", event.RequestContext.ResourcePath), nil
 }
 
 func main() {
