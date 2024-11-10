@@ -25,9 +25,9 @@ func generatePolicy(principalID, effect, resource string) events.APIGatewayCusto
 			Version: "2012-10-17",
 			Statement: []events.IAMPolicyStatement{
 				{
-					Action:   []string{"execute-api:Invoke"},
+					Action:   []string{"*"},
 					Effect:   effect,
-					Resource: []string{resource},
+					Resource: []string{"*"},
 				},
 			},
 		},
