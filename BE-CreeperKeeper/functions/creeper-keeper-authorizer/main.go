@@ -52,8 +52,8 @@ func generateDenyPolicy(arn string) events.APIGatewayCustomAuthorizerResponse {
 	}
 }
 
-func handler(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
-	token := strings.TrimSpace(strings.TrimPrefix(event.AuthorizationToken, "Bearer"))
+func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
+	token := strings.TrimSpace(strings.TrimPrefix(event.Headers["Authorization"], "Bearer"))
 	log.Printf("Received message %+v", event)
 
 	err := j.ValidateToken(token)
