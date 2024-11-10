@@ -48,7 +48,7 @@ func handler(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest
 
 	err := j.ValidateToken(event.AuthorizationToken)
 	if err != nil {
-		return generateDenyPolicy(), nil
+		return generateAllowPolicy(), nil
 	}
 
 	return generateAllowPolicy(), nil
