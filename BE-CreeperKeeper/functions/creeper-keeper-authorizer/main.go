@@ -7,7 +7,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/hnucamendi/CreeperKeeper/BE-CreeperKeeper/functions/creeper-keeper-authorizer/vendor/github.com/hnucamendi/jwt-go/jwt"
+	"github.com/hnucamendi/jwt-go/jwt"
 )
 
 var (
