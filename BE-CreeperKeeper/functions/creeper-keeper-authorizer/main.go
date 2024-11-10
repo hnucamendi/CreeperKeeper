@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -42,6 +43,8 @@ func generateDenyPolicy() events.APIGatewayCustomAuthorizerResponse {
 
 func handler(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
 	j := jwt.NewJWTClient()
+
+	log.Printf("Received message %+v", event)
 
 	err := j.ValidateToken(event.AuthorizationToken)
 	if err != nil {
