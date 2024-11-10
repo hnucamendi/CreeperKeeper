@@ -26,7 +26,7 @@ func init() {
 
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
-		panic("unable to load SDK config, " + err.Error())
+		log.Fatalf("unable to load SDK config, %v", err)
 	}
 
 	sc = ssm.NewFromConfig(cfg)
@@ -57,7 +57,7 @@ func getParams(paths ...string) (map[string]string, error) {
 			WithDecryption: aws.Bool(true),
 		})
 		if err != nil {
-			log.Fatalf("failed to get parameter %s: %v", path, err)
+			return nil, err
 		}
 		params[path] = *param.Parameter.Value
 	}
@@ -70,13 +70,7 @@ func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) 
 
 	p, err := getParams("/accountID")
 	if err != nil {
-		log.Fatalf("failed to get parameters: %v", err)
-	}
-
-	// Validate the JWT token here (assuming you have a function for that)
-	err = j.ValidateToken(token)
-	if err != nil {
-		log.Printf("Token validation failed: %v", err)
+		log.Printf("Failed to get parameters: %v", err)
 		return generatePolicy("user", "Deny", "*"), nil
 	}
 
@@ -89,6 +83,13 @@ func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) 
 	// resourceArn := "arn:aws:execute-api:" + region + ":" + accountID + ":" + apiID + "/" + stage + "/POST/*"
 	resourceArn := fmt.Sprintf("arn:aws:execute-api:%s:%s:%s/%s/POST/%s",
 		region, accountID, apiID, stage, event.RequestContext.RouteKey)
+
+	// Validate the JWT token here (assuming you have a function for that)
+	err = j.ValidateToken(token)
+	if err != nil {
+		log.Printf("Token validation failed: %v", err)
+		return generatePolicy("user", "Deny", resourceArn), nil
+	}
 
 	log.Printf("Token validated successfully, generating allow policy")
 	return generatePolicy("user", "Allow", resourceArn), nil
