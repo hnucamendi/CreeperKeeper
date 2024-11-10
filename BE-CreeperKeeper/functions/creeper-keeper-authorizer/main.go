@@ -20,16 +20,18 @@ var (
 )
 
 func init() {
-	j = jwt.NewJWTClient(
-		jwt.JWTTenantURL("https://dev-bxn245l6be2yzhil.us.auth0.com"),
-	)
-
+	// Loading default configuration
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v", err)
 	}
 
 	sc = ssm.NewFromConfig(cfg)
+
+	// Initializing JWT client
+	j = jwt.NewJWTClient(
+		jwt.JWTTenantURL("https://dev-bxn245l6be2yzhil.us.auth0.com"),
+	)
 }
 
 func generatePolicy(principalID, effect, resource string) events.APIGatewayCustomAuthorizerResponse {
@@ -49,10 +51,10 @@ func generatePolicy(principalID, effect, resource string) events.APIGatewayCusto
 	return policy
 }
 
-func getParams(paths ...string) (map[string]string, error) {
+func getParams(ctx context.Context, paths ...string) (map[string]string, error) {
 	params := map[string]string{}
 	for _, path := range paths {
-		param, err := sc.GetParameter(context.TODO(), &ssm.GetParameterInput{
+		param, err := sc.GetParameter(ctx, &ssm.GetParameterInput{
 			Name:           &path,
 			WithDecryption: aws.Bool(true),
 		})
@@ -65,26 +67,33 @@ func getParams(paths ...string) (map[string]string, error) {
 }
 
 func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
-	token := strings.TrimSpace(strings.TrimPrefix(event.Headers["Authorization"], "Bearer "))
-	log.Printf("Received message %+v", event)
+	// Checking for Authorization header
+	authHeader, ok := event.Headers["Authorization"]
+	if !ok || strings.TrimSpace(authHeader) == "" {
+		log.Println("Authorization header missing")
+		return generatePolicy("user", "Deny", "*"), nil
+	}
 
-	p, err := getParams("/accountID")
+	token := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
+	log.Printf("Received request for route: %s", event.RequestContext.RouteKey)
+
+	// Retrieving SSM parameters
+	p, err := getParams(ctx, "/accountID")
 	if err != nil {
 		log.Printf("Failed to get parameters: %v", err)
 		return generatePolicy("user", "Deny", "*"), nil
 	}
 
-	// Construct the resource ARN for the WebSocket API
+	// Constructing the resource ARN for the WebSocket API
 	apiID := event.RequestContext.APIID
 	stage := event.RequestContext.Stage
-	region := "us-east-1"
+	region := "us-east-1" // This can be retrieved dynamically as well
 	accountID := p["/accountID"]
 
-	// resourceArn := "arn:aws:execute-api:" + region + ":" + accountID + ":" + apiID + "/" + stage + "/POST/*"
 	resourceArn := fmt.Sprintf("arn:aws:execute-api:%s:%s:%s/%s/POST/%s",
 		region, accountID, apiID, stage, event.RequestContext.RouteKey)
 
-	// Validate the JWT token here (assuming you have a function for that)
+	// Validating the JWT token
 	err = j.ValidateToken(token)
 	if err != nil {
 		log.Printf("Token validation failed: %v", err)
