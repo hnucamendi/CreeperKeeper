@@ -9,7 +9,7 @@ import (
 	"github.com/hnucamendi/jwt-go/jwt"
 )
 
-func generateAllowPolicy() events.APIGatewayCustomAuthorizerResponse {
+func generateAllowPolicy(arn string) events.APIGatewayCustomAuthorizerResponse {
 	return events.APIGatewayCustomAuthorizerResponse{
 		PrincipalID: "user",
 		PolicyDocument: events.APIGatewayCustomAuthorizerPolicy{
@@ -18,14 +18,14 @@ func generateAllowPolicy() events.APIGatewayCustomAuthorizerResponse {
 				{
 					Action:   []string{"execute-api:Invoke"},
 					Effect:   "Allow",
-					Resource: []string{"*"},
+					Resource: []string{arn},
 				},
 			},
 		},
 	}
 }
 
-func generateDenyPolicy() events.APIGatewayCustomAuthorizerResponse {
+func generateDenyPolicy(arn string) events.APIGatewayCustomAuthorizerResponse {
 	return events.APIGatewayCustomAuthorizerResponse{
 		PrincipalID: "user",
 		PolicyDocument: events.APIGatewayCustomAuthorizerPolicy{
@@ -34,7 +34,7 @@ func generateDenyPolicy() events.APIGatewayCustomAuthorizerResponse {
 				{
 					Action:   []string{"execute-api:Invoke"},
 					Effect:   "Deny",
-					Resource: []string{"*"},
+					Resource: []string{arn},
 				},
 			},
 		},
@@ -48,10 +48,10 @@ func handler(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest
 
 	err := j.ValidateToken(event.AuthorizationToken)
 	if err != nil {
-		return generateAllowPolicy(), nil
+		return generateAllowPolicy(event.MethodArn), nil
 	}
 
-	return generateAllowPolicy(), nil
+	return generateAllowPolicy(event.MethodArn), nil
 }
 
 func main() {
