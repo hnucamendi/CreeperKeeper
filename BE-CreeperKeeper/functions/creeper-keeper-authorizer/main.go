@@ -20,16 +20,16 @@ func init() {
 	)
 }
 
-func generateAllowPolicy(arn string) events.APIGatewayCustomAuthorizerResponse {
+func generateAllowPolicy() events.APIGatewayCustomAuthorizerResponse {
 	return events.APIGatewayCustomAuthorizerResponse{
 		PrincipalID: "user",
 		PolicyDocument: events.APIGatewayCustomAuthorizerPolicy{
 			Version: "2012-10-17",
 			Statement: []events.IAMPolicyStatement{
 				{
-					Action:   []string{"execute-api:Invoke"},
+					Action:   []string{"*"},
 					Effect:   "Allow",
-					Resource: []string{arn},
+					Resource: []string{"*"},
 				},
 			},
 		},
@@ -58,10 +58,10 @@ func handler(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest
 
 	err := j.ValidateToken(token)
 	if err != nil {
-		return generateAllowPolicy(event.MethodArn), err
+		return generateAllowPolicy(), err
 	}
 
-	return generateAllowPolicy(event.MethodArn), nil
+	return generateAllowPolicy(), nil
 }
 
 func main() {
