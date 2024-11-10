@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/hnucamendi/jwt-go/jwt"
@@ -28,7 +29,7 @@ func init() {
 		panic("unable to load SDK config, " + err.Error())
 	}
 
-	ssm = ssm.NewFromConfig(cfg)
+	sc = ssm.NewFromConfig(cfg)
 }
 
 func generatePolicy(principalID, effect, resource string) events.APIGatewayCustomAuthorizerResponse {
@@ -53,12 +54,12 @@ func getParams(paths ...string) (map[string]string, error) {
 	for _, path := range paths {
 		param, err := sc.GetParameter(context.TODO(), &ssm.GetParameterInput{
 			Name:           &path,
-			WithDecryption: true,
+			WithDecryption: aws.Bool(true),
 		})
 		if err != nil {
 			log.Fatalf("failed to get parameter %s: %v", path, err)
 		}
-		params[path] = param.Parameter.Value
+		params[path] = *param.Parameter.Value
 	}
 	return params, nil
 }
