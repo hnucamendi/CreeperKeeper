@@ -65,14 +65,16 @@ func generateDeny(principalID, resource string) events.APIGatewayCustomAuthorize
 func getParams(ctx context.Context, paths ...string) (map[string]string, error) {
 	params := map[string]string{}
 	for _, path := range paths {
-		param, err := sc.GetParameter(ctx, &ssm.GetParameterInput{
-			Name:           &path,
+		param, err := sc.GetParameters(ctx, &ssm.GetParametersInput{
+			Names:          []string{path},
 			WithDecryption: aws.Bool(true),
 		})
 		if err != nil {
 			return nil, err
 		}
-		params[path] = *param.Parameter.Value
+		for _, p := range param.Parameters {
+			params[path] = *p.Value
+		}
 	}
 	return params, nil
 }
