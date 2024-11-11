@@ -38,8 +38,8 @@ func init() {
 	)
 }
 
-func generatePolicy(principalID, effect, resource string) events.APIGatewayCustomAuthorizerResponse {
-	return events.APIGatewayCustomAuthorizerResponse{
+func generatePolicy(principalID, effect, resource string) string {
+	policy := events.APIGatewayCustomAuthorizerResponse{
 		PrincipalID: principalID,
 		PolicyDocument: events.APIGatewayCustomAuthorizerPolicy{
 			Version: "2012-10-17",
@@ -52,13 +52,16 @@ func generatePolicy(principalID, effect, resource string) events.APIGatewayCusto
 			},
 		},
 	}
+
+	jp, _ := json.Marshal(policy)
+	return string(jp)
 }
 
-func generateAllow(principalID, resource string) events.APIGatewayCustomAuthorizerResponse {
+func generateAllow(principalID, resource string) string {
 	return generatePolicy(principalID, "Allow", resource)
 }
 
-func generateDeny(principalID, resource string) events.APIGatewayCustomAuthorizerResponse {
+func generateDeny(principalID, resource string) string {
 	return generatePolicy(principalID, "Deny", resource)
 }
 
@@ -84,7 +87,7 @@ func getParams(ctx context.Context, paths ...string) (map[string]string, error) 
 	return params, nil
 }
 
-func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
+func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) (string, error) {
 	apiID := event.RequestContext.APIID
 	region := sc.Options().Region
 	// Retrieving SSM parameters
