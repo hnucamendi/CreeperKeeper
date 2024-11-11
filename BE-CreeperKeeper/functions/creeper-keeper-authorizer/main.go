@@ -92,17 +92,17 @@ func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) 
 	p, err := getParams(ctx, "/accountID")
 	if err != nil {
 		log.Printf("Failed to get parameters: %v", err)
-		return generateDeny("user", fmt.Sprintf("arn:aws:execute-api:%s:1111111111:%s/%s/$connect",
-			region, apiID, stage)), err
+		return generateDeny("user", fmt.Sprintf("arn:aws:execute-api:%s:1111111111:%s/*/$connect",
+			region, apiID)), err
 	}
 
 	accountID, exists := p["/accountID"]
 	if !exists {
-		return generateDeny("user", fmt.Sprintf("arn:aws:execute-api:%s:1111111111:%s/%s/$connect", region, apiID, stage)), fmt.Errorf("/accountID not found")
+		return generateDeny("user", fmt.Sprintf("arn:aws:execute-api:%s:1111111111:%s/*/$connect", region, apiID)), fmt.Errorf("/accountID not found")
 	}
 
-	resourceArn := fmt.Sprintf("arn:aws:execute-api:%s:%s:%s/%s/$connect",
-		region, accountID, apiID, stage)
+	resourceArn := fmt.Sprintf("arn:aws:execute-api:%s:%s:%s/*/$connect",
+		region, accountID, apiID)
 
 	authHeader, ok := event.Headers["authorization"] // Check lowercase
 	if !ok {
@@ -123,10 +123,9 @@ func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) 
 		return generateDeny("user", resourceArn), err
 	}
 	policy := generateAllow("user", resourceArn)
-	fmt.Printf("TAMO 1 %+v", policy)
+	fmt.Printf("TAMO 1 %+v\n", policy)
 	j, _ := json.Marshal(policy)
-	fmt.Printf("TAMO 2 %+v", j)
-	fmt.Printf("TAMO 3 %v", j)
+	fmt.Printf("TAMO 3 %s\n", string(j))
 
 	log.Printf("Token validated successfully, generating allow policy")
 	return generateAllow("user", resourceArn), nil
