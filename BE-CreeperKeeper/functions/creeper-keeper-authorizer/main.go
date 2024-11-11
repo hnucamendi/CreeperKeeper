@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -38,7 +39,7 @@ func init() {
 }
 
 func generatePolicy(principalID, effect, resource string) events.APIGatewayCustomAuthorizerResponse {
-	policy := events.APIGatewayCustomAuthorizerResponse{
+	return events.APIGatewayCustomAuthorizerResponse{
 		PrincipalID: principalID,
 		PolicyDocument: events.APIGatewayCustomAuthorizerPolicy{
 			Version: "2012-10-17",
@@ -51,7 +52,6 @@ func generatePolicy(principalID, effect, resource string) events.APIGatewayCusto
 			},
 		},
 	}
-	return policy
 }
 
 func generateAllow(principalID, resource string) events.APIGatewayCustomAuthorizerResponse {
@@ -122,6 +122,11 @@ func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) 
 		log.Printf("Token validation failed: %v", err)
 		return generateDeny("user", resourceArn), err
 	}
+	policy := generateAllow("user", resourceArn)
+	fmt.Printf("TAMO 1 %+v", policy)
+	j, _ := json.Marshal(policy)
+	fmt.Printf("TAMO 2 %+v", j)
+	fmt.Printf("TAMO 3 %v", j)
 
 	log.Printf("Token validated successfully, generating allow policy")
 	return generateAllow("user", resourceArn), nil
