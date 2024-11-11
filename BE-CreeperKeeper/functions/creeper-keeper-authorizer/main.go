@@ -62,26 +62,28 @@ func generateDeny(principalID, resource string) events.APIGatewayCustomAuthorize
 	return generatePolicy(principalID, "Deny", resource)
 }
 
-func getParams(ctx context.Context, paths ...string) (map[string]string, error) {
+func getParams(ctx context.Context, paths ...string) (string, map[string]string, error) {
 	params := map[string]string{}
-	for _, path := range paths {
-		param, err := sc.GetParameters(ctx, &ssm.GetParametersInput{
-			Names:          []string{path},
-			WithDecryption: aws.Bool(true),
-		})
-		if err != nil {
-			return nil, err
-		}
-		for _, p := range param.Parameters {
-			params[path] = *p.Value
-		}
+
+	param, err := sc.GetParameters(ctx, &ssm.GetParametersInput{
+		Names:          paths,
+		WithDecryption: aws.Bool(true),
+	})
+	if err != nil {
+		return "", nil, err
 	}
-	return params, nil
+
+	var t string
+	for _, p := range param.Parameters {
+		params[*p.Name] = *p.Value
+		t = *p.Name
+	}
+	return t, params, nil
 }
 
 func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
 	// Retrieving SSM parameters
-	p, err := getParams(ctx, "/accountID")
+	n, p, err := getParams(ctx, "/accountID")
 	if err != nil {
 		log.Printf("Failed to get parameters: %v", err)
 		return generateDeny("user", "*"), err
@@ -91,7 +93,7 @@ func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) 
 	apiID := event.RequestContext.APIID
 	stage := event.RequestContext.Stage
 	region := sc.Options().Region
-	accountID := p["/accountID"]
+	accountID := p[n]
 
 	resourceArn := fmt.Sprintf("arn:aws:execute-api:%s:%s:%s/%s/$connect",
 		region, accountID, apiID, stage)
