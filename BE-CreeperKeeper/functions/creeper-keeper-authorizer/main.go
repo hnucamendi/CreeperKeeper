@@ -86,7 +86,6 @@ func getParams(ctx context.Context, paths ...string) (map[string]string, error) 
 
 func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
 	apiID := event.RequestContext.APIID
-	stage := event.RequestContext.Stage
 	region := sc.Options().Region
 	// Retrieving SSM parameters
 	p, err := getParams(ctx, "/accountID")
