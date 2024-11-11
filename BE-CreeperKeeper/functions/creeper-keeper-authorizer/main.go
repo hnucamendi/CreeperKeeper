@@ -62,23 +62,26 @@ func generateDeny(principalID, resource string) events.APIGatewayCustomAuthorize
 	return generatePolicy(principalID, "Deny", resource)
 }
 
-func getParams(ctx context.Context, paths ...string) (string, map[string]string, error) {
+func getParams(ctx context.Context, paths ...string) (map[string]string, error) {
 	params := map[string]string{}
 
-	param, err := sc.GetParameters(ctx, &ssm.GetParametersInput{
+	result, err := sc.GetParameters(ctx, &ssm.GetParametersInput{
 		Names:          paths,
 		WithDecryption: aws.Bool(true),
 	})
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
-	var t string
-	for _, p := range param.Parameters {
-		params[*p.Name] = *p.Value
-		t = *p.Name
+	if len(result.InvalidParameters) > 0 {
+		log.Printf("Invalid parameters: %v", result.InvalidParameters)
+		return nil, fmt.Errorf("invalid parameters: %v", result.InvalidParameters)
 	}
-	return t, params, nil
+
+	for _, p := range result.Parameters {
+		params[*p.Name] = *p.Value
+	}
+	return params, nil
 }
 
 func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
@@ -86,15 +89,17 @@ func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) 
 	stage := event.RequestContext.Stage
 	region := sc.Options().Region
 	// Retrieving SSM parameters
-	n, p, err := getParams(ctx, "/accountID")
+	p, err := getParams(ctx, "/accountID")
 	if err != nil {
 		log.Printf("Failed to get parameters: %v", err)
 		return generateDeny("user", fmt.Sprintf("arn:aws:execute-api:%s:1111111111:%s/%s/$connect",
 			region, apiID, stage)), err
 	}
 
-	// Constructing the resource ARN for the WebSocket API
-	accountID := p[n]
+	accountID, exists := p["/accountID"]
+	if !exists {
+		return generateDeny("user", fmt.Sprintf("arn:aws:execute-api:%s:1111111111:%s/%s/$connect", region, apiID, stage)), fmt.Errorf("/accountID not found")
+	}
 
 	resourceArn := fmt.Sprintf("arn:aws:execute-api:%s:%s:%s/%s/$connect",
 		region, accountID, apiID, stage)
