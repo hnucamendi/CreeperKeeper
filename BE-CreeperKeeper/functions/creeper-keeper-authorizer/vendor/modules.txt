@@ -107,7 +107,7 @@ github.com/aws/smithy-go/tracing
 github.com/aws/smithy-go/transport/http
 github.com/aws/smithy-go/transport/http/internal/io
 github.com/aws/smithy-go/waiter
-# github.com/hnucamendi/jwt-go v1.1.0
+# github.com/hnucamendi/jwt-go v1.1.1
 ## explicit; go 1.23.2
 github.com/hnucamendi/jwt-go/jwt
 # github.com/jmespath/go-jmespath v0.4.0

@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.32.4
 	github.com/aws/aws-sdk-go-v2/config v1.28.3
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.55.5
-	github.com/hnucamendi/jwt-go v1.1.0
+	github.com/hnucamendi/jwt-go v1.1.1
 )
 
 require (
