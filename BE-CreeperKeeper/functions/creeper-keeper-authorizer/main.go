@@ -67,10 +67,12 @@ func getParams(ctx context.Context, paths ...string) (map[string]string, error) 
 }
 
 func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
-	// Checking for Authorization header
-	authHeader, ok := event.Headers["Authorization"]
+	authHeader, ok := event.Headers["authorization"] // Check lowercase
+	if !ok {
+		authHeader, ok = event.Headers["Authorization"] // Fallback
+	}
 	if !ok || strings.TrimSpace(authHeader) == "" {
-		log.Println("Authorization header missing")
+		log.Println("Authorization header missing or empty")
 		return generatePolicy("user", "Deny", "*"), nil
 	}
 
