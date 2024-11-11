@@ -91,16 +91,16 @@ func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) 
 	p, err := getParams(ctx, "/accountID")
 	if err != nil {
 		log.Printf("Failed to get parameters: %v", err)
-		return generateDeny("user", fmt.Sprintf("arn:aws:execute-api:%s:1111111111:%s/*/$connect",
+		return generateDeny("user", fmt.Sprintf("arn:aws:execute-api:%s:1111111111:%s/*/*",
 			region, apiID)), err
 	}
 
 	accountID, exists := p["/accountID"]
 	if !exists {
-		return generateDeny("user", fmt.Sprintf("arn:aws:execute-api:%s:1111111111:%s/*/$connect", region, apiID)), fmt.Errorf("/accountID not found")
+		return generateDeny("user", fmt.Sprintf("arn:aws:execute-api:%s:1111111111:%s/*/*", region, apiID)), fmt.Errorf("/accountID not found")
 	}
 
-	resourceArn := fmt.Sprintf("arn:aws:execute-api:%s:%s:%s/*/$connect",
+	resourceArn := fmt.Sprintf("arn:aws:execute-api:%s:%s:%s/*/*",
 		region, accountID, apiID)
 
 	authHeader, ok := event.Headers["authorization"] // Check lowercase
