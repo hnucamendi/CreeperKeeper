@@ -82,17 +82,18 @@ func getParams(ctx context.Context, paths ...string) (string, map[string]string,
 }
 
 func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
+	apiID := event.RequestContext.APIID
+	stage := event.RequestContext.Stage
+	region := sc.Options().Region
 	// Retrieving SSM parameters
 	n, p, err := getParams(ctx, "/accountID")
 	if err != nil {
 		log.Printf("Failed to get parameters: %v", err)
-		return generateDeny("user", "*"), err
+		return generateDeny("user", fmt.Sprintf("arn:aws:execute-api:%s:1111111111:%s/%s/$connect",
+			region, apiID, stage)), err
 	}
 
 	// Constructing the resource ARN for the WebSocket API
-	apiID := event.RequestContext.APIID
-	stage := event.RequestContext.Stage
-	region := sc.Options().Region
 	accountID := p[n]
 
 	resourceArn := fmt.Sprintf("arn:aws:execute-api:%s:%s:%s/%s/$connect",
