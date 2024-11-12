@@ -100,7 +100,7 @@ func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) 
 
 	accountID, exists := p["/accountID"]
 	if !exists {
-		return generateDeny("user", fmt.Sprintf("arn:aws:execute-api:%s:1111111111:%s/*/*", region, apiID)), fmt.Errorf("/accountID not found")
+		return generateDeny("me", fmt.Sprintf("arn:aws:execute-api:%s:1111111111:%s/*/*", region, apiID)), fmt.Errorf("/accountID not found")
 	}
 
 	resourceArn := fmt.Sprintf("arn:aws:execute-api:%s:%s:%s/*/*",
@@ -122,15 +122,15 @@ func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) 
 	err = j.ValidateToken(token)
 	if err != nil {
 		log.Printf("Token validation failed: %v", err)
-		return generateDeny("user", resourceArn), err
+		return generateDeny("me", resourceArn), err
 	}
-	policy := generateAllow("user", resourceArn)
+	policy := generateAllow("me", resourceArn)
 	fmt.Printf("TAMO 1 %+v\n", policy)
 	j, _ := json.Marshal(policy)
 	fmt.Printf("TAMO 3 %s\n", string(j))
 
 	log.Printf("Token validated successfully, generating allow policy")
-	return generateAllow("user", resourceArn), nil
+	return policy, nil
 }
 
 func main() {
