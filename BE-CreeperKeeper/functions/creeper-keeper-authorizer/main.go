@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -18,6 +20,17 @@ var (
 	j  *jwt.JWTClient
 	sc *ssm.Client
 )
+
+type JWTClaims struct {
+	Iss   string `json:"iss"`
+	Sub   string `json:"sub"`
+	Aud   string `json:"aud"`
+	Iat   int64  `json:"iat"`
+	Exp   int64  `json:"exp"`
+	Scope string `json:"scope"`
+	Gty   string `json:"gty"`
+	Azp   string `json:"azp"`
+}
 
 func init() {
 	// Loading default configuration
@@ -83,6 +96,50 @@ func getParams(ctx context.Context, paths ...string) (map[string]string, error) 
 	return params, nil
 }
 
+func validateHeaderParts(parts []string) error {
+	if len(parts) != 3 {
+		return errors.New("invalid token format")
+	}
+
+	// Decode the payload part (second part) of the JWT
+	payload := parts[1]
+	claims := JWTClaims{}
+	err := json.Unmarshal([]byte(payload), &claims)
+	if err != nil {
+		return fmt.Errorf("invalid token payload: %v", err)
+	}
+
+	// Verify the issuer
+	expectedIssuer := "https://dev-bxn245l6be2yzhil.us.auth0.com/"
+	if claims.Iss != expectedIssuer {
+		return fmt.Errorf("invalid issuer: %s", claims.Iss)
+	}
+
+	// Verify the audience
+	expectedAudience := "creeper-keeper-resource"
+	if claims.Aud != expectedAudience {
+		return fmt.Errorf("invalid audience: %s", claims.Aud)
+	}
+
+	// Verify the subject
+	if claims.Sub == "" || !strings.HasSuffix(claims.Sub, "@clients") {
+		return fmt.Errorf("invalid subject: %s", claims.Sub)
+	}
+
+	// Verify the grant type
+	if claims.Gty != "client-credentials" {
+		return fmt.Errorf("invalid grant type: %s", claims.Gty)
+	}
+
+	// Verify the authorized party
+	expectedAzp := "HugtxPdCMdi8PmvUXC6lw8lEm6u5Jaex"
+	if claims.Azp != expectedAzp {
+		return fmt.Errorf("invalid authorized party: %s", claims.Azp)
+	}
+
+	return nil
+}
+
 func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
 	apiID := event.RequestContext.APIID
 	region := sc.Options().Region
@@ -108,6 +165,14 @@ func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) 
 		log.Println("Authorization header missing or empty")
 		return generateDeny("user", resourceArn), nil
 	}
+
+	headerParts := strings.Split(authHeader, ".")
+	if len(headerParts) != 3 {
+		log.Println("Invalid JWT token")
+		return generateDeny("user", resourceArn), nil
+	}
+
+	validateHeaderParts(headerParts)
 
 	token := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
 	log.Printf("Received request for route: %s", event.RequestContext.RouteKey)
