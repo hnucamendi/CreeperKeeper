@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -38,8 +37,8 @@ func init() {
 	)
 }
 
-func generatePolicy(principalID, effect, resource string) string {
-	policy := events.APIGatewayCustomAuthorizerResponse{
+func generatePolicy(principalID, effect, resource string) events.APIGatewayCustomAuthorizerResponse {
+	return events.APIGatewayCustomAuthorizerResponse{
 		PrincipalID: principalID,
 		PolicyDocument: events.APIGatewayCustomAuthorizerPolicy{
 			Version: "2012-10-17",
@@ -52,16 +51,13 @@ func generatePolicy(principalID, effect, resource string) string {
 			},
 		},
 	}
-
-	jp, _ := json.Marshal(policy)
-	return string(jp)
 }
 
-func generateAllow(principalID, resource string) string {
+func generateAllow(principalID, resource string) events.APIGatewayCustomAuthorizerResponse {
 	return generatePolicy(principalID, "Allow", resource)
 }
 
-func generateDeny(principalID, resource string) string {
+func generateDeny(principalID, resource string) events.APIGatewayCustomAuthorizerResponse {
 	return generatePolicy(principalID, "Deny", resource)
 }
 
@@ -87,24 +83,22 @@ func getParams(ctx context.Context, paths ...string) (map[string]string, error) 
 	return params, nil
 }
 
-func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) (string, error) {
+func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
 	apiID := event.RequestContext.APIID
 	region := sc.Options().Region
 	// Retrieving SSM parameters
 	p, err := getParams(ctx, "/accountID")
 	if err != nil {
 		log.Printf("Failed to get parameters: %v", err)
-		return generateDeny("user", fmt.Sprintf("arn:aws:execute-api:%s:1111111111:%s/*/*",
-			region, apiID)), err
+		return generateDeny("user", fmt.Sprintf("arn:aws:execute-api:%s:1111111111:%s/*/*", region, apiID)), err
 	}
 
 	accountID, exists := p["/accountID"]
 	if !exists {
-		return generateDeny("me", fmt.Sprintf("arn:aws:execute-api:%s:1111111111:%s/*/*", region, apiID)), fmt.Errorf("/accountID not found")
+		return generateDeny("user", fmt.Sprintf("arn:aws:execute-api:%s:1111111111:%s/*/*", region, apiID)), fmt.Errorf("/accountID not found")
 	}
 
-	resourceArn := fmt.Sprintf("arn:aws:execute-api:%s:%s:%s/*/*",
-		region, accountID, apiID)
+	resourceArn := fmt.Sprintf("arn:aws:execute-api:%s:%s:%s/*/*", region, accountID, apiID)
 
 	authHeader, ok := event.Headers["authorization"] // Check lowercase
 	if !ok {
@@ -112,7 +106,7 @@ func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) 
 	}
 	if !ok || strings.TrimSpace(authHeader) == "" {
 		log.Println("Authorization header missing or empty")
-		return generateDeny("me", resourceArn), err
+		return generateDeny("user", resourceArn), nil
 	}
 
 	token := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
@@ -122,15 +116,11 @@ func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) 
 	err = j.ValidateToken(token)
 	if err != nil {
 		log.Printf("Token validation failed: %v", err)
-		return generateDeny("me", resourceArn), err
+		return generateDeny("user", resourceArn), nil
 	}
-	policy := generateAllow("me", resourceArn)
-	fmt.Printf("TAMO 1 %+v\n", policy)
-	j, _ := json.Marshal(policy)
-	fmt.Printf("TAMO 3 %s\n", string(j))
 
 	log.Printf("Token validated successfully, generating allow policy")
-	return policy, nil
+	return generateAllow("user", resourceArn), nil
 }
 
 func main() {
