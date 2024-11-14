@@ -9,6 +9,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/apigatewaymanagementapi"
 	"github.com/aws/aws-sdk-go-v2/service/apigatewaymanagementapi/types"
@@ -19,7 +20,6 @@ var (
 )
 
 func init() {
-	// Load AWS configuration
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-east-1"))
 	if err != nil {
 		panic(fmt.Sprintf("Unable to load SDK config, %v", err))
@@ -27,6 +27,8 @@ func init() {
 
 	// Initialize API Gateway Management client
 	apiClient = apigatewaymanagementapi.NewFromConfig(cfg)
+
+	// Base URL for sending messages to WebSocket connections
 }
 
 // WebSocketMessage represents the structure of messages expected from the WebSocket
@@ -48,6 +50,7 @@ func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) 
 	// Handle different actions based on the WebSocket message
 	switch msg.Action {
 	case "sendLog":
+		fmt.Printf("TAMO %+v\n", msg)
 		// Handle sending log data to connected client
 		err := sendMessageToClient(ctx, connectionID, msg.Data)
 		if err != nil {
@@ -72,11 +75,14 @@ func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) 
 // sendMessageToClient sends a message to a connected WebSocket client
 func sendMessageToClient(ctx context.Context, connectionID, message string) error {
 	input := &apigatewaymanagementapi.PostToConnectionInput{
-		ConnectionId: &connectionID,
+		ConnectionId: aws.String(connectionID),
 		Data:         []byte(message),
 	}
 
 	_, err := apiClient.PostToConnection(ctx, input)
+	if err != nil {
+		log.Printf("Error posting to connection %s: %v", connectionID, err)
+	}
 	return err
 }
 
