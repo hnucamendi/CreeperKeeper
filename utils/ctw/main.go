@@ -129,7 +129,7 @@ func main() {
 		log.Fatalf("APIID not found in parameters")
 	}
 
-	url := "wss://" + APIID + ".execute-api.us-east-1.amazonaws.com/ck"
+	url := "wss://" + APIID + ".execute-api.us-east-1.amazonaws.com/ck/sendMessage"
 
 	// Create a new WebSocket configuration
 	config, err := websocket.NewConfig(url, url)
