@@ -52,7 +52,7 @@ func init() {
 	apiClient = apigatewaymanagementapi.New(apigatewaymanagementapi.Options{
 		Credentials:  cfg.Credentials,
 		Region:       cfg.Region,
-		BaseEndpoint: aws.String("https://" + apiID + ".execute-api.us-east-1.amazonaws.com/ck/@connections"), // Base URL for sending messages to WebSocket connections
+		BaseEndpoint: aws.String("https://" + apiID + ".execute-api.us-east-1.amazonaws.com/ck"), // Base URL for sending messages to WebSocket connections
 	})
 
 	// Base URL for sending messages to WebSocket connections
