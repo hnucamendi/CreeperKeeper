@@ -13,7 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/apigatewaymanagementapi"
 	"github.com/aws/aws-sdk-go-v2/service/apigatewaymanagementapi/types"
-	"github.com/aws/aws-sdk-go-v2/service/ssm"
 )
 
 var (
@@ -27,36 +26,10 @@ func init() {
 		panic(fmt.Sprintf("Unable to load SDK config, %v", err))
 	}
 
-	// Create an SSM client to fetch parameters
-	ssmClient := ssm.NewFromConfig(cfg)
+	// Initialize API Gateway Management client
+	apiClient = apigatewaymanagementapi.NewFromConfig(cfg)
 
-	// Get the APIID from SSM
-	apiID, err := getParameter(ssmClient, "/ck/ws/APIID")
-	if err != nil {
-		panic(fmt.Sprintf("Unable to retrieve APIID from SSM, %v", err))
-	}
-
-	// Create the base URL for the API Gateway Management API client
-	webSocketEndpoint := fmt.Sprintf("wss://%s.execute-api.us-east-1.amazonaws.com/ck/", apiID)
-
-	// Create a custom API Gateway Management API client with the correct endpoint
-	apiClient = apigatewaymanagementapi.New(apigatewaymanagementapi.Options{
-		Region:           "us-east-1",
-		EndpointResolver: apigatewaymanagementapi.EndpointResolverFromURL(webSocketEndpoint),
-		Credentials:      cfg.Credentials,
-	})
-}
-
-// getParameter retrieves a parameter from AWS Systems Manager Parameter Store
-func getParameter(ssmClient *ssm.Client, name string) (string, error) {
-	param, err := ssmClient.GetParameter(context.TODO(), &ssm.GetParameterInput{
-		Name:           aws.String(name),
-		WithDecryption: aws.Bool(true),
-	})
-	if err != nil {
-		return "", err
-	}
-	return *param.Parameter.Value, nil
+	// Base URL for sending messages to WebSocket connections
 }
 
 // WebSocketMessage represents the structure of messages expected from the WebSocket
@@ -67,7 +40,7 @@ type WebSocketMessage struct {
 
 func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) (events.APIGatewayProxyResponse, error) {
 	connectionID := event.RequestContext.ConnectionID
-	log.Printf("Received message %+v", event)
+	log.Printf("Received event %+v\n", event)
 	var msg WebSocketMessage
 
 	// Parse the incoming message
@@ -77,8 +50,8 @@ func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) 
 	}
 
 	// Handle different actions based on the WebSocket message
-	fmt.Printf("Message received: %+v\n", msg)
 
+	fmt.Printf("TAMO %+v\n", msg)
 	// Handle sending log data to connected client
 	err := sendMessageToClient(ctx, connectionID, msg.Data)
 	if err != nil {
@@ -103,11 +76,13 @@ func sendMessageToClient(ctx context.Context, connectionID, message string) erro
 	}
 
 	fmt.Printf("INPUT: %+v\n", input)
+	fmt.Printf("API CLIENT: %+v\n", apiClient)
 
-	_, err := apiClient.PostToConnection(ctx, input)
+	out, err := apiClient.PostToConnection(ctx, input)
 	if err != nil {
 		log.Printf("Error posting to connection %s: %v", connectionID, err)
 	}
+	fmt.Printf("OUT: %+v\n", out)
 	return err
 }
 
