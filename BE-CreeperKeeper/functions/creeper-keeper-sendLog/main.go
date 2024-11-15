@@ -50,24 +50,18 @@ func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) 
 	}
 
 	// Handle different actions based on the WebSocket message
-	switch msg.Action {
-	case "sendLog":
-		fmt.Printf("TAMO %+v\n", msg)
-		// Handle sending log data to connected client
-		err := sendMessageToClient(ctx, connectionID, msg.Data)
-		if err != nil {
-			if apiErr, ok := err.(*types.GoneException); ok {
-				// Connection is no longer available (client disconnected)
-				log.Printf("Connection %s is gone: %v", connectionID, apiErr)
-			} else {
-				log.Printf("Error sending message to connection %s: %v", connectionID, err)
-			}
-			return events.APIGatewayProxyResponse{StatusCode: http.StatusInternalServerError, Body: "Failed to send message"}, nil
+
+	fmt.Printf("TAMO %+v\n", msg)
+	// Handle sending log data to connected client
+	err := sendMessageToClient(ctx, connectionID, msg.Data)
+	if err != nil {
+		if apiErr, ok := err.(*types.GoneException); ok {
+			// Connection is no longer available (client disconnected)
+			log.Printf("Connection %s is gone: %v", connectionID, apiErr)
+		} else {
+			log.Printf("Error sending message to connection %s: %v", connectionID, err)
 		}
-	default:
-		// Unsupported action
-		log.Printf("Unsupported action: %s", msg.Action)
-		return events.APIGatewayProxyResponse{StatusCode: http.StatusBadRequest, Body: "Unsupported action"}, nil
+		return events.APIGatewayProxyResponse{StatusCode: http.StatusInternalServerError, Body: "Failed to send message"}, nil
 	}
 
 	// Successfully processed the request
