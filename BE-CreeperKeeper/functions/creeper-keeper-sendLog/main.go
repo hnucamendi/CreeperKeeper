@@ -40,6 +40,7 @@ type WebSocketMessage struct {
 
 func handler(ctx context.Context, event events.APIGatewayWebsocketProxyRequest) (events.APIGatewayProxyResponse, error) {
 	connectionID := event.RequestContext.ConnectionID
+	log.Printf("Received message %+v", event)g
 	var msg WebSocketMessage
 
 	// Parse the incoming message

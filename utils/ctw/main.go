@@ -130,14 +130,15 @@ func main() {
 		log.Fatalf("APIID not found in parameters")
 	}
 
-	url := "wss://" + APIID + ".execute-api.us-east-1.amazonaws.com/ck/sendLog"
+	url := "wss://" + APIID + ".execute-api.us-east-1.amazonaws.com/ck/"
+
 	// Create a new WebSocket configuration
 	config, err := websocket.NewConfig(url, url)
 	if err != nil {
 		log.Fatalf("Error creating WebSocket config: %v", err)
 	}
 
-	config.Header = http.Header{}
+	// config.Header = http.Header{}
 	config.Header.Set("Authorization", "Bearer "+token)
 
 	// Connect to the WebSocket server
@@ -163,6 +164,4 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error sending message: %v", err)
 	}
-
-	log.Println("Message sent successfully")
 }
