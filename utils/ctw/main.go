@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -131,11 +132,14 @@ func main() {
 
 	url := "wss://" + APIID + ".execute-api.us-east-1.amazonaws.com/ck/sendLog"
 
+	fmt.Println("TAMO", url, APIID)
+
 	// Create a new WebSocket configuration
 	config, err := websocket.NewConfig(url, url)
 	if err != nil {
 		log.Fatalf("Error creating WebSocket config: %v", err)
 	}
+	fmt.Printf("%+v", config)
 
 	config.Header = http.Header{}
 	config.Header.Set("Authorization", "Bearer "+token)
@@ -149,7 +153,17 @@ func main() {
 
 	logMessage := os.Args[1]
 
-	_, err = conn.Write([]byte(logMessage))
+	bodyMessage := map[string]string{
+		"action": "sendLog",
+		"data":   logMessage,
+	}
+
+	jBody, err := json.Marshal(bodyMessage)
+	if err != nil {
+		log.Fatalf("Error marshalling message: %v", err)
+	}
+
+	_, err = conn.Write(jBody)
 	if err != nil {
 		log.Fatalf("Error sending message: %v", err)
 	}
