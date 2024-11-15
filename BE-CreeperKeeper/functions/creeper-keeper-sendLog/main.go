@@ -37,7 +37,7 @@ func init() {
 	}
 
 	// Create the base URL for the API Gateway Management API client
-	webSocketEndpoint := fmt.Sprintf("https://%s.execute-api.us-east-1.amazonaws.com/ck", apiID)
+	webSocketEndpoint := fmt.Sprintf("wss://%s.execute-api.us-east-1.amazonaws.com/ck/", apiID)
 
 	// Create a custom API Gateway Management API client with the correct endpoint
 	apiClient = apigatewaymanagementapi.New(apigatewaymanagementapi.Options{
