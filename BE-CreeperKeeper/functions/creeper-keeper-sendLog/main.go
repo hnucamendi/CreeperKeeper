@@ -20,6 +20,7 @@ var (
 )
 
 func init() {
+	fmt.Println("Starting from Cold Start")
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-east-1"))
 	if err != nil {
 		panic(fmt.Sprintf("Unable to load SDK config, %v", err))
@@ -79,10 +80,13 @@ func sendMessageToClient(ctx context.Context, connectionID, message string) erro
 		Data:         []byte(message),
 	}
 
-	_, err := apiClient.PostToConnection(ctx, input)
+	fmt.Printf("INPUT: %+v\n", input)
+
+	out, err := apiClient.PostToConnection(ctx, input)
 	if err != nil {
 		log.Printf("Error posting to connection %s: %v", connectionID, err)
 	}
+	fmt.Printf("OUT: %+v\n", out)
 	return err
 }
 
