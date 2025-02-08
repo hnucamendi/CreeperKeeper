@@ -1,7 +1,7 @@
 locals {
   cp_app_name = "creeperkeeper"
 }
-
+// sudo docker run -d --name mc -p 25565:25565 -e EULA=TRUE -e TYPE=FTBA -e FTB_MODPACK_ID=126 -e FTB_MODPACK_VERSION=100011 -e MEMORY=2G -e MAX_PLAYERS=10 -e MOTD="RedCraft" -e TZ=EST -e DIFFICULTY=3 -e OPS="Oldjimmy_" -v "$(pwd)/data:/data" --tty --interactive itzg/minecraft-server
 ## EC2 Server ##
 resource "aws_instance" "main" {
   ami                    = var.ami
@@ -12,7 +12,10 @@ resource "aws_instance" "main" {
   user_data              = <<-EOF
               #!/bin/bash
               sudo yum update -y
-              sudo yum install -y docker
+              sudo yum install -y docker htop tmux
+              sudo systemctl start docker
+              sudo echo "alias runcmd=\"sudo docker exec -i mc rcon-cli\"" >> ~/.bashrc
+              sudo source ~/.bashrc 
             EOF
 
   tags = {
@@ -22,22 +25,22 @@ resource "aws_instance" "main" {
 
 ## Key Pair ##
 resource "aws_key_pair" "main" {
-  key_name   = "${local.cp_app_name}-key-pair"        # Name for your key pair
-  public_key = file("~/.ssh/id_ed25519.pub") # Path to your SSH public key
+  key_name   = "${local.cp_app_name}-key-pair" # Name for your key pair
+  public_key = file("~/.ssh/id_ed25519.pub")   # Path to your SSH public key
 }
 
 ## Security Group ##
 resource "aws_security_group" "main" {
   name        = "${local.cp_app_name}-sg"
   description = "Allow inbound Minecraft access"
-  vpc_id      = "vpc-0123b9d0536e94660" # Replace with your VPC ID
+  vpc_id      = var.vpc_id
 
   ingress {
     description = "Allow Minecraft TCP"
     from_port   = 25565
     to_port     = 25565
     protocol    = "tcp"
-    cidr_blocks = ["15.230.221.0/24"] # this should limit access to the east coast 
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
