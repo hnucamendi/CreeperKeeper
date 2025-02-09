@@ -5,17 +5,23 @@ locals {
 
 
 module "ftb_server" {
-  source                              = "hnucamendi/minecraft-server-module/aws"
-  version                             = "0.0.1"
+  source  = "hnucamendi/minecraft-server-module/aws"
+  version = "0.0.7"
+
+  vpc_id                              = var.vpc_id
   app_name                            = local.cp_app_name
-  instance_type                       = "t3.small"
+  instance_type                       = "t3.medium"
   minecraft_max_players               = 10
   minecraft_motd                      = "RedCraft"
-  minecraft_memory_G                  = 2
   minecraft_ops_list                  = "Oldjimmy_"
   minecraft_server_type               = "FTBA"
   minecraft_rcon_cmds_last_disconnect = "stop"
-  vpc_id                              = var.vpc_id
+  minecraft_memory_G                  = 3
+  minecraft_difficulty_level          = 3
+  minecraft_world_name                = "RedCraft"
+  minecraft_world_seed                = local.cp_app_name
+  ftb_modpack_version_id              = 100011
+  ftb_modpack_id                      = 126
 
   security_group_ingress_rules = {
     "allow-all-mc" = {
