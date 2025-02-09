@@ -10,13 +10,13 @@ module "ftb_server" {
 
   vpc_id                              = var.vpc_id
   app_name                            = local.cp_app_name
-  instance_type                       = "t3.medium"
+  instance_type                       = "t3.large"
   minecraft_max_players               = 10
   minecraft_motd                      = "RedCraft"
   minecraft_ops_list                  = "Oldjimmy_"
   minecraft_server_type               = "FTBA"
   minecraft_rcon_cmds_last_disconnect = "stop"
-  minecraft_memory_G                  = 3
+  minecraft_memory_G                  = 6
   minecraft_difficulty_level          = 3
   minecraft_world_name                = "RedCraft"
   minecraft_world_seed                = local.cp_app_name
