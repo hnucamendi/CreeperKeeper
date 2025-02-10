@@ -1,43 +1,33 @@
 name: Deploy
+
 on:
   push:
     branches:
-      - 'master'
+      - "master"
+
 permissions:
   contents: read
   id-token: write
+
 jobs:
   fetch_lambdas:
     runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Install jq
-        run: sudo apt-get install -y jq
-      - name: Fetch Lambda Names and Go Versions
-        id: fetch_lambdas
-        run: |
-          chmod +x ./utils/fetch-lambdas.sh
-          lambdas=$(./utils/fetch-lambdas.sh)
-          echo "::set-output name=lambdas::$lambdas"
-      - name: Set up Matrix
-        id: set-matrix
-        run: |
-          lambdas='${{ steps.fetch_lambdas.outputs.lambdas }}'
-          echo "lambdas=${lambdas}"
-          matrix=$(echo "${lambdas}" | jq -r '[.[] | {name: .name, go_version: .go_version}]')
-          echo "::set-output name=matrix::$(echo $matrix | jq -c)"
-  deploy_lambdas:
+        uses: actions/checkout@v4
+
+      - name: Get Lambda Name
+        run: echo "LAMBDA_NAME=$(ls backend | head -n 1)" >> $GITHUB_ENV
+
+      - name: Get Go Version
+        run: echo "GO_VERSION=$(grep -E '^go [0-9]+\.[0-9]+' backend/creeper-keeper/go.mod | awk '{print $2}' | cut -d '.' -f1,2)" >> $GITHUB_ENV
+
+  deploy:
     needs: fetch_lambdas
-    strategy:
-      matrix:
-        lambda: ${{ fromJson(needs.fetch_lambdas.outputs.matrix) }}
     uses: hnucamendi/shared-gha-workflows/.github/workflows/deploy-given-version-lambda.yml@master
     with:
       version_tag: ${{ github.ref }}
-      lambda_name: ${{ matrix.lambda.name }}
-      runtime_version: ${{ matrix.lambda.go_version }}
-      subdirectory: "./BE-CreeperKeeper/functions/${{ matrix.lambda.name }}"
+      lambda_name: "creeper-keeper-api"
+      runtime_version: ${{ env.GO_VERSION }}
+      subdirectory: "./backend/${{ env.LAMBDA_NAME }}"
     secrets: inherit
