@@ -1,4 +1,4 @@
-package cpec2
+package ckec2
 
 import (
 	"context"
