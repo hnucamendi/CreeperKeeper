@@ -29,6 +29,6 @@ jobs:
     with:
       version_tag: ${{ github.ref }}
       lambda_name: creeperkeeper
-      runtime_version: ${{ needs.fetch_lambdas.outputs.go_version }}
+      runtime_version: "${{ needs.fetch_lambdas.outputs.go_version }}"
       subdirectory: "backend"
     secrets: inherit
