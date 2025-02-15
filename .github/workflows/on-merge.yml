@@ -23,6 +23,12 @@ jobs:
         id: get_go_version
         run: echo "go_version=$(grep -E '^go [0-9]+\.[0-9]+' backend/go.mod | awk '{print $2}' | cut -d '.' -f1,2)" >> $GITHUB_ENV
 
+  test:
+    runs-on: ubuntu-latest
+    needs: fetch_lambdas
+    steps:
+      - name: Test
+        run: echo ${{ needs.fetch_lambdas.outputs.go_version }}
   deploy:
     needs: fetch_lambdas
     uses: hnucamendi/shared-gha-workflows/.github/workflows/deploy-given-version-lambda.yml@master
