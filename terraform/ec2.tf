@@ -1,16 +1,12 @@
-locals {
-  cp_app_name = "creeperkeeper"
-}
-
 module "vanilla" {
   source  = "hnucamendi/minecraft-server-module/aws"
-  version = "0.0.7"
+  version = "1.0.1"
 
   vpc_id             = var.vpc_id
-  app_name           = local.cp_app_name
-  instance_type      = "t3.medium"
+  app_name           = local.ck_app_name
+  instance_type      = "t3.small"
   minecraft_ops_list = "Oldjimmy_"
-  minecraft_memory_G = 3
+  minecraft_memory_G = 1
 
   security_group_ingress_rules = {
     "allow-all-mc" = {
@@ -36,7 +32,7 @@ module "vanilla" {
 //   version = "0.0.7"
 // 
 //   vpc_id                              = var.vpc_id
-//   app_name                            = local.cp_app_name
+//   app_name                            = local.ck_app_name
 //   instance_type                       = "r6i.large"
 //   minecraft_max_players               = 10
 //   minecraft_motd                      = "RedCraft"
@@ -46,7 +42,7 @@ module "vanilla" {
 //   minecraft_memory_G                  = 20
 //   minecraft_difficulty_level          = 3
 //   minecraft_world_name                = "RedCraft"
-//   minecraft_world_seed                = local.cp_app_name
+//   minecraft_world_seed                = local.ck_app_name
 //   ftb_modpack_version_id              = 100011
 //   ftb_modpack_id                      = 126
 // 
