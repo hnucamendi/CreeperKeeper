@@ -8,8 +8,8 @@ variable "vpc_id" {
   sensitive = true
 }
 
-variable "ami" {
+variable "ck_app_name" {
   type      = string
   sensitive = false
-  default   = "ami-06b21ccaeff8cd686"
+  default   = "creeperkeeper"
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
-	"github.com/hnucamendi/creeper-keeper/cpec2"
+	"github.com/hnucamendi/creeper-keeper/ckec2"
 )
 
 type Handler struct {
@@ -38,6 +38,7 @@ func (ck *CreeperKeeper) unmarshallRequest(b io.ReadCloser) error {
 	return nil
 }
 
+// Adds EC2 instance details to DynamoDB
 func (h *Handler) AddInstance(w http.ResponseWriter, r *http.Request) {
 	ck := &CreeperKeeper{}
 	err := ck.unmarshallRequest(r.Body)
@@ -88,7 +89,6 @@ func (h *Handler) GetInstances(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
-	log.Println("Landed in StartServer Route")
 	ck := &CreeperKeeper{}
 	err := ck.unmarshallRequest(r.Body)
 	if err != nil {
@@ -101,9 +101,7 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println("Instance ID:", ck.InstanceID)
-
-	instances, err := cpec2.StartEC2Instance(context.Background(), h.Client.ec2, ck.InstanceID)
+	instances, err := ckec2.StartEC2Instance(context.Background(), h.Client.ec2, ck.InstanceID)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())
 	}
@@ -113,7 +111,7 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		WriteResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to marshal instance list"))
 	}
 
-	commands := []string{"pwd", `tmux new -d -s minecraft "echo -e 'yes' | ./start.sh"`}
+	commands := []string{`tmux new -d -s minecraft "echo -e 'yes' | ./start.sh"`}
 
 	input := &ssm.SendCommandInput{
 		DocumentName: aws.String("AWS-RunShellScript"),
@@ -165,12 +163,16 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = cpec2.StopEC2Instance(context.Background(), h.Client.ec2, ck.InstanceID)
+	err = ckec2.StopEC2Instance(context.Background(), h.Client.ec2, ck.InstanceID)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to stop minecraft server %s", err.Error()))
 	}
 
 	WriteResponse(w, http.StatusOK, "Server stopping")
+}
+
+func (h *Handler) Test(w http.ResponseWriter, r *http.Request) {
+  WriteResponse(w, http.StatusOK, " Hello World")
 }
 
 func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
