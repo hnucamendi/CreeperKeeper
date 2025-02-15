@@ -13,28 +13,27 @@ jobs:
   fetch_lambdas:
     runs-on: ubuntu-latest
     outputs:
-      lambda_name: ${{ steps.get_lambda.outputs.lambda_name }}
-      go_version: ${{ steps.get_go_version.outputs.go_version }}
+      GOVER: ${{ steps.getGOVER.outputs.GOVER }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Get Go Version
-        id: get_go_version
-        run: echo "go_version=$(grep -E '^go [0-9]+\.[0-9]+' backend/go.mod | awk '{print $2}' | cut -d '.' -f1,2)" >> $GITHUB_ENV
+        id: getGOVER
+        run: $(grep -E '^go [0-9]+\.[0-9]+' backend/go.mod | awk '{print $2}' | cut -d '.' -f1,2)
 
   test:
     runs-on: ubuntu-latest
     needs: fetch_lambdas
     steps:
       - name: Test
-        run: echo ${{ needs.fetch_lambdas.outputs.go_version }}
+        run: echo ${{ needs.fetch_lambdas.outputs.GOVER }}
   deploy:
     needs: fetch_lambdas
     uses: hnucamendi/shared-gha-workflows/.github/workflows/deploy-given-version-lambda.yml@master
     with:
       version_tag: ${{ github.ref }}
       lambda_name: creeperkeeper
-      runtime_version: "${{ needs.fetch_lambdas.outputs.go_version }}"
+      runtime_version: "${{ needs.fetch_lambdas.outputs.GOVER }}"
       subdirectory: "backend"
     secrets: inherit
