@@ -5,9 +5,9 @@ import (
 )
 
 func loadRoutes(mux *http.ServeMux, h *Handler) {
-	mux.HandleFunc("POST /ck/start", h.StartServer)
-	mux.HandleFunc("POST /ck/stop", h.StopServer)
-	mux.HandleFunc("POST /ck/add", h.AddInstance)
-	mux.HandleFunc("GET /ck/instances", h.GetInstances)
-	mux.HandleFunc("GET /ck/test", h.Test)
+	mux.HandleFunc("POST /creeperkeeper/start", h.StartServer)
+	mux.HandleFunc("POST /creeperkeeper/stop", h.StopServer)
+	mux.HandleFunc("POST /creeperkeeper/add", h.AddInstance)
+	mux.HandleFunc("GET /creeperkeeper/instances", h.GetInstances)
+	mux.HandleFunc("GET /creeperkeeper/test", h.Test)
 }
