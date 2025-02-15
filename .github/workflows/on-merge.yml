@@ -19,20 +19,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Get Lambda Name
-        id: get_lambda
-        run: echo "lambda_name=$(ls backend | head -n 1)" >> $GITHUB_ENV
-
       - name: Get Go Version
         id: get_go_version
-        run: echo "go_version=$(grep -E '^go [0-9]+\.[0-9]+' backend/creeper-keeper/go.mod | awk '{print $2}' | cut -d '.' -f1,2)" >> $GITHUB_ENV
+        run: echo "go_version=$(grep -E '^go [0-9]+\.[0-9]+' backend/go.mod | awk '{print $2}' | cut -d '.' -f1,2)" >> $GITHUB_ENV
 
   deploy:
     needs: fetch_lambdas
     uses: hnucamendi/shared-gha-workflows/.github/workflows/deploy-given-version-lambda.yml@master
     with:
       version_tag: ${{ github.ref }}
-      lambda_name: ${{ needs.fetch_lambdas.outputs.lambda_name }}
+      lambda_name: creeperkeeper
       runtime_version: ${{ needs.fetch_lambdas.outputs.go_version }}
-      subdirectory: "./backend/${{ needs.fetch_lambdas.outputs.lambda_name }}"
+      subdirectory: "backend"
     secrets: inherit
