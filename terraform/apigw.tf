@@ -105,11 +105,11 @@ resource "aws_apigatewayv2_stage" "main" {
 resource "aws_apigatewayv2_domain_name" "main" {
   domain_name = local.ck_app_host_name
   domain_name_configuration {
-    certificate_arn = aws_acm_certificate.cert.arn
+    certificate_arn = aws_acm_certificate.main.arn
     endpoint_type   = "REGIONAL"
     security_policy = "TLS_1_2"
   }
-  depends_on = [aws_acm_certificate.cert]
+  depends_on = [aws_acm_certificate.main]
 }
 
 resource "aws_apigatewayv2_api_mapping" "main" {
@@ -137,6 +137,6 @@ resource "aws_apigatewayv2_integration" "main" {
   description            = "${var.ck_app_name} server manager"
   payload_format_version = "2.0"
   integration_method     = "POST"
-  integration_uri        = aws_lambda_function.main.invoke_arn
-  depends_on             = [aws_lambda_function.main]
+  integration_uri        = aws_lambda_function.controller.invoke_arn
+  depends_on             = [aws_lambda_function.controller]
 }

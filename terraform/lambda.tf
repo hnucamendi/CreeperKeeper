@@ -86,13 +86,13 @@ resource "aws_iam_role_policy" "main" {
 resource "aws_lambda_permission" "main" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.main.arn
+  function_name = aws_lambda_function.controller.arn
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
 }
 
 # CloudWatch Log Group
-resource "aws_cloudwatch_log_group" "creeper_keeper_apigw" {
+resource "aws_cloudwatch_log_group" "main" {
   name              = "/aws/apigateway/${aws_apigatewayv2_api.main.name}"
   retention_in_days = 7
 }
