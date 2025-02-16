@@ -9,5 +9,4 @@ func loadRoutes(mux *http.ServeMux, h *Handler) {
 	mux.HandleFunc("POST /creeperkeeper/stop", h.StopServer)
 	mux.HandleFunc("POST /creeperkeeper/add", h.AddInstance)
 	mux.HandleFunc("GET /creeperkeeper/instances", h.GetInstances)
-	mux.HandleFunc("GET /creeperkeeper/test", h.Test)
 }

@@ -171,10 +171,6 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	WriteResponse(w, http.StatusOK, "Server stopping")
 }
 
-func (h *Handler) Test(w http.ResponseWriter, r *http.Request) {
-  WriteResponse(w, http.StatusOK, " Hello World")
-}
-
 func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
 	w.WriteHeader(code)
 	response := map[string]interface{}{"message": message}

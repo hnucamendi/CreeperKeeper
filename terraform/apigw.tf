@@ -70,12 +70,6 @@ resource "aws_apigatewayv2_route" "get_instances" {
   authorization_type   = "JWT"
 }
 
-resource "aws_apigatewayv2_route" "test" {
-  api_id               = aws_apigatewayv2_api.main.id
-  route_key            = "GET /test"
-  target               = "integrations/${aws_apigatewayv2_integration.main.id}"
-}
-
 resource "aws_apigatewayv2_stage" "main" {
   api_id      = aws_apigatewayv2_api.main.id
   name        = var.ck_app_name
