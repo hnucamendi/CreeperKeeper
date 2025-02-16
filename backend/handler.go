@@ -126,15 +126,18 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 	newServerIP, err := ckec2.StartEC2Instance(context.Background(), h.Client.ec2, ck.ID)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		return
 	}
 
-	ok, err := updateServerIP(ck.ID, newServerIP)
+	ok, err := h.updateServerIP(ck.ID, newServerIP)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	if !ok {
 		WriteResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to update database with new serverIP"))
+		return
 	}
 
 	commands := []string{"sudo docker start %s" + *ck.Name}
@@ -156,28 +159,28 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
-	ck := &CreeperKeeper{}
+	ck := &Server{}
 	err := ck.unmarshallRequest(r.Body)
 	if err != nil {
 		WriteResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if ck.InstanceID == "" {
+	if ck.ID == nil {
 		WriteResponse(w, http.StatusBadRequest, "instance_id must be provided")
 		return
 	}
 
-	log.Println("Instance ID:", ck.InstanceID)
+	log.Println("Instance ID:", ck.ID)
 
 	commands := []string{"tmux send-keys -t minecraft 'C-c'"}
 
 	input := &ssm.SendCommandInput{
 		DocumentName: aws.String("AWS-RunShellScript"),
-		InstanceIds:  []string{ck.InstanceID},
+		InstanceIds:  []string{*ck.ID},
 		Parameters: map[string][]string{
 			"commands":         commands,
-			"workingDirectory": {"/home/ec2-user/Minecraft"},
+			"workingDirectory": {"/home/ec2-user"},
 		},
 	}
 
@@ -187,12 +190,17 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = ckec2.StopEC2Instance(context.Background(), h.Client.ec2, ck.InstanceID)
+	err = ckec2.StopEC2Instance(context.Background(), h.Client.ec2, *ck.ID)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to stop minecraft server %s", err.Error()))
 	}
 
 	WriteResponse(w, http.StatusOK, "Server stopping")
+}
+
+func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
+
+	WriteResponse(w, http.StatusOK, "Not implemented yet")
 }
 
 func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
@@ -206,7 +214,7 @@ func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
 	w.Write(jMessage)
 }
 
-func updateServerIP(serverID *string, newServerIP *string) (bool, error) {
+func (h *Handler) updateServerIP(serverID *string, newServerIP *string) (bool, error) {
 	input := &dynamodb.UpdateItemInput{
 		TableName: aws.String("CreeperKeeper"),
 		Key: map[string]types.AttributeValue{
@@ -214,14 +222,20 @@ func updateServerIP(serverID *string, newServerIP *string) (bool, error) {
 				Value: *serverID,
 			},
 		},
-    UpdateExpression: aws.String(""),
-
-		// Item: map[string]types.AttributeValue{
-		//   "PK": &types.AttributeValueMemberS{
-		//     Value: *ck.ID,
-		//   },
-		// },
+		UpdateExpression: aws.String("SET ServerIP = :sip"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			"ServerIP": &types.AttributeValueMemberS{
+				Value: *newServerIP,
+			},
+		},
 	}
+
+	out, err := h.Client.db.UpdateItem(context.Background(), input)
+	if err != nil {
+		return false, err
+	}
+
+	fmt.Printf("UPDATE META %+v, %+v", out.ResultMetadata, out.Attributes)
 	return true, nil
 }
 
