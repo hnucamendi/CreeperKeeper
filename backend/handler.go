@@ -25,11 +25,13 @@ func NewHandler(c *C) *Handler {
 	}
 }
 
-type CreeperKeeper struct {
-	InstanceID string `json:"instanceID"`
+type Server struct {
+	ID   *string `json:"serverID"`
+	IP   *string `json:"serverIP"`
+	Name *string `json:"serverName"`
 }
 
-func (ck *CreeperKeeper) unmarshallRequest(b io.ReadCloser) error {
+func (ck *Server) unmarshallRequest(b io.ReadCloser) error {
 	err := json.NewDecoder(b).Decode(&ck)
 	if err != nil {
 		return err
@@ -38,28 +40,44 @@ func (ck *CreeperKeeper) unmarshallRequest(b io.ReadCloser) error {
 	return nil
 }
 
-// Adds EC2 instance details to DynamoDB
-func (h *Handler) AddInstance(w http.ResponseWriter, r *http.Request) {
-	ck := &CreeperKeeper{}
+// Adds EC2 instance details to DynamoDB to be used by EC2 Directly
+// TODO: take measures to ensure this cannot be invoked from FE
+func (h *Handler) RegisterServer(w http.ResponseWriter, r *http.Request) {
+	ck := &Server{}
 	err := ck.unmarshallRequest(r.Body)
 	if err != nil {
 		WriteResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if ck.InstanceID == "" {
-		WriteResponse(w, http.StatusBadRequest, "instance_id must be provided")
+	if ck.ID == nil {
+		WriteResponse(w, http.StatusBadRequest, "serverID required for registering new server")
 		return
 	}
 
+	if ck.IP == nil {
+		WriteResponse(w, http.StatusBadRequest, "IP required for registering new server")
+	}
+
+	if ck.Name == nil {
+		WriteResponse(w, http.StatusBadRequest, "server name is required for registering new server")
+	}
+
+	// TODO: Abstract DB logic in DB specific controller
 	_, err = h.Client.db.PutItem(r.Context(), &dynamodb.PutItemInput{
 		TableName: aws.String("CreeperKeeper"),
 		Item: map[string]types.AttributeValue{
 			"PK": &types.AttributeValueMemberS{
-				Value: ck.InstanceID,
+				Value: *ck.ID,
 			},
 			"SK": &types.AttributeValueMemberS{
-				Value: "instance",
+				Value: "serverdetails",
+			},
+			"ServerIP": &types.AttributeValueMemberS{
+				Value: *ck.IP,
+			},
+			"ServerName": &types.AttributeValueMemberS{
+				Value: *ck.Name,
 			},
 		},
 	})
@@ -68,10 +86,10 @@ func (h *Handler) AddInstance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	WriteResponse(w, http.StatusOK, "Instance added")
+	WriteResponse(w, http.StatusOK, "server registered")
 }
 
-func (h *Handler) GetInstances(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
 	out, err := h.Client.db.Scan(r.Context(), &dynamodb.ScanInput{
 		TableName: aws.String("CreeperKeeper"),
 	})
@@ -80,55 +98,61 @@ func (h *Handler) GetInstances(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	instances := []string{}
-	for _, item := range out.Items {
-		instances = append(instances, item["PK"].(*types.AttributeValueMemberS).Value)
+	var serverList = make([]map[string]string, len(out.Items))
+	for i := range out.Items {
+		serverList[i] = map[string]string{
+			"serverID":   out.Items[i]["PK"].(*types.AttributeValueMemberS).Value,
+			"serverIP":   out.Items[i]["ServerIP"].(*types.AttributeValueMemberS).Value,
+			"serverName": out.Items[i]["ServerName"].(*types.AttributeValueMemberS).Value,
+		}
 	}
 
-	WriteResponse(w, http.StatusOK, instances)
+	WriteResponse(w, http.StatusOK, serverList)
 }
 
 func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
-	ck := &CreeperKeeper{}
+	ck := &Server{}
 	err := ck.unmarshallRequest(r.Body)
 	if err != nil {
 		WriteResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if ck.InstanceID == "" {
-		WriteResponse(w, http.StatusBadRequest, "instance_id must be provided")
+	if ck.ID == nil || ck.Name == nil {
+		WriteResponse(w, http.StatusBadRequest, "serverID, server name must be provided")
 		return
 	}
 
-	instances, err := ckec2.StartEC2Instance(context.Background(), h.Client.ec2, ck.InstanceID)
+	newServerIP, err := ckec2.StartEC2Instance(context.Background(), h.Client.ec2, ck.ID)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())
 	}
 
-	b, err := json.Marshal(instances)
+	ok, err := updateServerIP(ck.ID, newServerIP)
 	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to marshal instance list"))
+		WriteResponse(w, http.StatusInternalServerError, err.Error())
 	}
 
-	commands := []string{`tmux new -d -s minecraft "echo -e 'yes' | ./start.sh"`}
+	if !ok {
+		WriteResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to update database with new serverIP"))
+	}
 
+	commands := []string{"sudo docker start %s" + *ck.Name}
 	input := &ssm.SendCommandInput{
 		DocumentName: aws.String("AWS-RunShellScript"),
-		InstanceIds:  []string{ck.InstanceID},
+		InstanceIds:  []string{*ck.ID},
 		Parameters: map[string][]string{
 			"commands":         commands,
-			"workingDirectory": {"/home/ec2-user/Minecraft"},
+			"workingDirectory": {"/home/ec2-user"},
 		},
 	}
-
 	_, err = h.Client.sc.SendCommand(r.Context(), input)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to start minecraft server: %s", err.Error()))
 		return
 	}
 
-	WriteResponse(w, http.StatusOK, string(b))
+	WriteResponse(w, http.StatusOK, nil)
 }
 
 func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
@@ -180,6 +204,25 @@ func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
 		return
 	}
 	w.Write(jMessage)
+}
+
+func updateServerIP(serverID *string, newServerIP *string) (bool, error) {
+	input := &dynamodb.UpdateItemInput{
+		TableName: aws.String("CreeperKeeper"),
+		Key: map[string]types.AttributeValue{
+			"PK": &types.AttributeValueMemberS{
+				Value: *serverID,
+			},
+		},
+    UpdateExpression: aws.String(""),
+
+		// Item: map[string]types.AttributeValue{
+		//   "PK": &types.AttributeValueMemberS{
+		//     Value: *ck.ID,
+		//   },
+		// },
+	}
+	return true, nil
 }
 
 func loadEnvVars(ctx context.Context, sc *ssm.Client) (clientID string, clientSecret string, audience string, err error) {

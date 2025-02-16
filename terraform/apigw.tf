@@ -3,7 +3,7 @@ locals {
   ck_host_name   = "${local.ck_domain_name}.com"
 
 
-  ck_app_host_name = "app.${local.ck_host_name}"
+  ck_app_host_name = "api.${local.ck_host_name}"
   ck_web_host_name = "www.${local.ck_host_name}"
   ck_cdn_host_name = "cdn.${local.ck_host_name}"
 

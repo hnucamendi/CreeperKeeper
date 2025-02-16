@@ -5,8 +5,9 @@ import (
 )
 
 func loadRoutes(mux *http.ServeMux, h *Handler) {
-	mux.HandleFunc("POST /creeperkeeper/start", h.StartServer)
-	mux.HandleFunc("POST /creeperkeeper/stop", h.StopServer)
-	mux.HandleFunc("POST /creeperkeeper/add", h.AddInstance)
-	mux.HandleFunc("GET /creeperkeeper/instances", h.GetInstances)
+	mux.HandleFunc("POST /creeperkeeper/instance/register", h.RegisterServer)
+	mux.HandleFunc("GET /creeperkeeper/instance/list", h.ListServers)
+	mux.HandleFunc("POST /creeperkeeper/instance/start", h.StartServer)
+	mux.HandleFunc("POST /creeperkeeper/instance/stop", h.StopServer)
+	mux.HandleFunc("GET /creeperkeeper/instance/ping", h.Ping)
 }
