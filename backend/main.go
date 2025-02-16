@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -13,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
 	"github.com/hnucamendi/jwt-go/jwt"
+	"golang.org/x/exp/rand"
 )
 
 var (
@@ -33,6 +35,7 @@ type C struct {
 func init() {
 	log.Println("Starting from Cold Start")
 	mux = http.NewServeMux()
+	rand.Seed(uint64(time.Now().UnixNano()))
 
 	awscfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {

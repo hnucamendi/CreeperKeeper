@@ -11,6 +11,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.55.3
 	github.com/awslabs/aws-lambda-go-api-proxy v0.16.2
 	github.com/hnucamendi/jwt-go v1.0.0
+	golang.org/x/exp v0.0.0-20240112132812-db7319d0e0e3
 )
 
 require (

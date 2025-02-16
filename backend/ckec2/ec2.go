@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"math/rand"
 	"net/http"
-	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
@@ -91,29 +93,62 @@ func StartEC2Instance(ctx context.Context, client *ec2.Client, serverID *string)
 	return ip, nil
 }
 
-func StopEC2Instance(ctx context.Context, client *ec2.Client, instanceID string) error {
-	safeStopInput := &ec2.StopInstancesInput{
-		InstanceIds: []string{instanceID},
-		DryRun:      aws.Bool(true),
+func StopEC2Instance(ctx context.Context, client *ec2.Client, serverID *string) error {
+	stopInput := &ec2.StopInstancesInput{
+		InstanceIds: []string{*serverID},
 	}
-
-	if _, err := describeInstanceStatus(ctx, client, instanceID, STOP); err != nil {
+	out, err := client.StopInstances(ctx, stopInput)
+	if err != nil {
 		return err
 	}
 
-	_, err := client.StopInstances(ctx, safeStopInput)
-	if err != nil {
-		if strings.Contains(err.Error(), "DryRunOperation") {
-			safeStopInput.DryRun = aws.Bool(false)
-			_, err = client.StopInstances(ctx, safeStopInput)
-			if err != nil {
-				return err
+	fmt.Printf("Server META STOP %+v", out.ResultMetadata)
+
+	// TODO: Make sure server is stopped before returning
+
+	return nil
+}
+
+func Retry[T any](ctx context.Context, fn func() (T, error), attempts int) (T, error) {
+	var zero T
+	var result T
+	var err error
+	var maxDelay = 1 * time.Minute
+
+	for i := 0; i < attempts; i++ {
+		if i > 0 {
+			log.Printf("attempt %d failed: %v", i+1, err)
+
+			baseDelay := time.Duration(1<<i) * time.Second
+			jitter := time.Duration(rand.Int63n(int64(baseDelay)))
+			delay := baseDelay + jitter
+			if delay > maxDelay {
+				delay = maxDelay + time.Duration(rand.Int63n(int64(5*time.Second)))
 			}
-		} else {
-			return err
+
+			select {
+			case <-time.After(delay):
+			case <-ctx.Done():
+				return zero, ctx.Err()
+			}
+		}
+		result, err = fn()
+		if err == nil {
+			return result, nil
 		}
 	}
-	return nil
+	return zero, fmt.Errorf("after %d attempts, last error: %w", attempts, err)
+}
+
+func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
+	w.WriteHeader(code)
+	response := map[string]interface{}{"message": message}
+	jMessage, err := json.Marshal(response)
+	if err != nil {
+		http.Error(w, `{"message": "Internal Server Error"}`, http.StatusInternalServerError)
+		return
+	}
+	w.Write(jMessage)
 }
 
 // func TerminateEC2Instance(ctx context.Context, client *ec2.Client, db *dynamodb.Client, instanceID string) error {
@@ -155,14 +190,3 @@ func StopEC2Instance(ctx context.Context, client *ec2.Client, instanceID string)
 //
 // 	return nil
 // }
-
-func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
-	w.WriteHeader(code)
-	response := map[string]interface{}{"message": message}
-	jMessage, err := json.Marshal(response)
-	if err != nil {
-		http.Error(w, `{"message": "Internal Server Error"}`, http.StatusInternalServerError)
-		return
-	}
-	w.Write(jMessage)
-}

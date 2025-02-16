@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -123,7 +122,10 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newServerIP, err := ckec2.StartEC2Instance(context.Background(), h.Client.ec2, ck.ID)
+	newServerIP, err := ckec2.Retry(r.Context(), func() (*string, error) {
+		newServerIP, err := ckec2.StartEC2Instance(r.Context(), h.Client.ec2, ck.ID)
+		return newServerIP, err
+	}, 10)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -140,7 +142,7 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	commands := []string{"sudo docker start %s" + *ck.Name}
+	commands := []string{"sudo docker start " + *ck.Name}
 	input := &ssm.SendCommandInput{
 		DocumentName: aws.String("AWS-RunShellScript"),
 		InstanceIds:  []string{*ck.ID},
@@ -171,10 +173,7 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println("Instance ID:", ck.ID)
-
-	commands := []string{"tmux send-keys -t minecraft 'C-c'"}
-
+	commands := []string{"sudo docker exec -i " + *ck.Name + " rcon-cli", "stop"}
 	input := &ssm.SendCommandInput{
 		DocumentName: aws.String("AWS-RunShellScript"),
 		InstanceIds:  []string{*ck.ID},
@@ -183,16 +182,19 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 			"workingDirectory": {"/home/ec2-user"},
 		},
 	}
-
 	_, err = h.Client.sc.SendCommand(r.Context(), input)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to stop minecraft server: %s", err.Error()))
 		return
 	}
 
-	err = ckec2.StopEC2Instance(context.Background(), h.Client.ec2, *ck.ID)
+	_, err = ckec2.Retry(r.Context(), func() (*string, error) {
+		err := ckec2.StopEC2Instance(r.Context(), h.Client.ec2, ck.ID)
+		return nil, err
+	}, 10)
 	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to stop minecraft server %s", err.Error()))
+		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	WriteResponse(w, http.StatusOK, "Server stopping")
