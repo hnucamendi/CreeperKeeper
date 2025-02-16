@@ -1,3 +1,4 @@
+## CreeperKeeper APIGW setup ##
 resource "aws_lambda_function" "controller" {
   function_name = var.ck_app_name
   role          = aws_iam_role.main.arn
@@ -49,6 +50,11 @@ resource "aws_iam_role_policy" "main" {
         Resource = "*"
       },
       {
+        Action   = ["ec2:DescribeInstances"],
+        Effect   = "Allow",
+        Resource = "*"
+      },
+      {
         Effect = "Allow",
         Action = [
           "ssm:GetParameters",
@@ -97,3 +103,20 @@ resource "aws_cloudwatch_log_group" "main" {
   retention_in_days = 7
 }
 
+## EC2 register serice setup ##
+resource "aws_lambda_function" "ec2_monitor" {
+  function_name = "${var.ck_app_name}-ec2-register"
+  role          = aws_iam_role.main.arn
+  architectures = ["x86_64"]
+  filename      = "./bootstrap.zip"
+  handler       = "bootstrap"
+  runtime       = "provided.al2023"
+}
+
+resource "aws_lambda_permission" "ec2_monitor" {
+  statement_id  = "AllowExecutionFromEventBridge"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.ec2_monitor.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.ec2_monitor.arn
+}
