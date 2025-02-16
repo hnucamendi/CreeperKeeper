@@ -38,7 +38,7 @@ jobs:
           lambdas='${{ steps.fetch_lambdas.outputs.lambdas }}'
           echo "lambdas=${lambdas}"
           matrix=$(echo "${lambdas}" | jq -r '[.[] | {name: .name, go_version: .go_version}]')
-          echo "matrix$(echo $matrix | jq -c)" >> $GITHUB_OUTPUT
+          echo "matrix=$(echo $matrix | jq -c)" >> $GITHUB_OUTPUT
   deploy_lambdas:
     needs: fetch_lambdas
     strategy:
