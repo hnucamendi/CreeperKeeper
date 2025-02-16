@@ -1,34 +1,53 @@
 name: Deploy
-
 on:
   push:
     branches:
       - "master"
-
 permissions:
   contents: read
   id-token: write
-
 jobs:
   fetch_lambdas:
     runs-on: ubuntu-latest
     outputs:
-      GOVER: ${{ steps.getGOVER.outputs.GOVER }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Get Go Version
-        id: getGOVER
+      - name: Install jq
+        run: sudo apt-get install -y jq
+      - name: Fetch Lambda Names and Go Versions
+        id: fetch_lambdas
         run: |
-          GOVER=$(grep -E '^go [0-9]+\.[0-9]+' backend/go.mod | awk '{print $2}' | cut -d '.' -f1,2)
-          echo "GOVER=$GOVER" >> $GITHUB_OUTPUT
-  deploy:
+          LAMBDAS_DIR="./backend"
+          lambdas_info=()
+          for dir in "$LAMBDAS_DIR"/*/; do
+            if [ -f "$dir/go.mod" ]; then
+              lambda_name=$(basename "$dir")
+              go_version=$(grep '^go ' "$dir/go.mod" | awk '{print $2}')
+              major_minor_version=$(echo "$go_version" | grep -oE '^[0-9]+\.[0-9]+')
+              lambdas_info+=("{\"name\":\"$lambda_name\",\"go_version\":\"$major_minor_version\"}")
+            fi
+          done
+          lambdas_json=$(printf ",%s" "${lambdas_info[@]}")
+          lambdas_json="[${lambdas_json:1}]"
+          echo "lambdas=$lambdas_json" >> $GITHUB_OUTPUT
+      - name: Set up Matrix
+        id: set-matrix
+        run: |
+          lambdas='${{ steps.fetch_lambdas.outputs.lambdas }}'
+          echo "lambdas=${lambdas}"
+          matrix=$(echo "${lambdas}" | jq -r '[.[] | {name: .name, go_version: .go_version}]')
+          echo "matrix$(echo $matrix | jq -c)" >> $GITHUB_OUTPUT
+  deploy_lambdas:
     needs: fetch_lambdas
+    strategy:
+      matrix:
+        lambda: ${{ fromJson(needs.fetch_lambdas.outputs.matrix) }}
     uses: hnucamendi/shared-gha-workflows/.github/workflows/deploy-given-version-lambda.yml@master
     with:
       version_tag: ${{ github.ref }}
-      lambda_name: creeperkeeper
-      runtime_version: "${{ needs.fetch_lambdas.outputs.GOVER }}"
-      subdirectory: "backend"
+      lambda_name: ${{ matrix.lambda.name }}
+      runtime_version: ${{ matrix.lambda.go_version }}
+      subdirectory: "./backend/${{ matrix.lambda.name }}"
     secrets: inherit

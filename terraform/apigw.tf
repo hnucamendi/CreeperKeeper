@@ -36,7 +36,7 @@ resource "aws_apigatewayv2_authorizer" "main" {
 
 resource "aws_apigatewayv2_route" "start" {
   api_id               = aws_apigatewayv2_api.main.id
-  route_key            = "POST /start"
+  route_key            = "POST /server/start"
   target               = "integrations/${aws_apigatewayv2_integration.main.id}"
   authorization_scopes = ["read:all", "write:all"]
   authorizer_id        = aws_apigatewayv2_authorizer.main.id
@@ -45,25 +45,25 @@ resource "aws_apigatewayv2_route" "start" {
 
 resource "aws_apigatewayv2_route" "stop" {
   api_id               = aws_apigatewayv2_api.main.id
-  route_key            = "POST /stop"
+  route_key            = "POST /server/stop"
   target               = "integrations/${aws_apigatewayv2_integration.main.id}"
   authorization_scopes = ["read:all"]
   authorizer_id        = aws_apigatewayv2_authorizer.main.id
   authorization_type   = "JWT"
 }
 
-resource "aws_apigatewayv2_route" "add_instance" {
+resource "aws_apigatewayv2_route" "register" {
   api_id               = aws_apigatewayv2_api.main.id
-  route_key            = "POST /add"
+  route_key            = "POST /server/register"
   target               = "integrations/${aws_apigatewayv2_integration.main.id}"
   authorization_scopes = ["write:all"]
   authorizer_id        = aws_apigatewayv2_authorizer.main.id
   authorization_type   = "JWT"
 }
 
-resource "aws_apigatewayv2_route" "get_instances" {
+resource "aws_apigatewayv2_route" "list" {
   api_id               = aws_apigatewayv2_api.main.id
-  route_key            = "GET /instances"
+  route_key            = "GET /server/list"
   target               = "integrations/${aws_apigatewayv2_integration.main.id}"
   authorization_scopes = ["read:all"]
   authorizer_id        = aws_apigatewayv2_authorizer.main.id

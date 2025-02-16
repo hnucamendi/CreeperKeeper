@@ -1,12 +1,12 @@
 module "vanilla" {
   source  = "hnucamendi/minecraft-server-module/aws"
-  version = "1.0.1"
+  version = "1.0.3"
 
-  vpc_id             = var.vpc_id
-  app_name           = var.ck_app_name
-  instance_type      = "t3.small"
-  minecraft_ops_list = "Oldjimmy_"
-  minecraft_memory_G = 1
+  vpc_id               = var.vpc_id
+  app_name             = var.ck_app_name
+  instance_type        = "t3.small"
+  minecraft_ops_list   = "Oldjimmy_"
+  minecraft_memory_G   = 1
 
   security_group_ingress_rules = {
     "allow-all-mc" = {
