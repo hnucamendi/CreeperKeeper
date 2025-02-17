@@ -57,6 +57,7 @@ func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) 
 		fmt.Println("TAMO made it here", detail.State)
 		_, err := handleRunningState(ctx, detail, c)
 		if err != nil {
+			fmt.Println("TAMO ERR CHECK", err)
 			return "", fmt.Errorf("failed to register server on state: %s error: %w", detail.State, err)
 		}
 
