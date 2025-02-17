@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -62,6 +63,11 @@ func (h *Handler) RegisterServer(w http.ResponseWriter, r *http.Request) {
 		WriteResponse(w, http.StatusBadRequest, "server name is required for registering new server")
 	}
 
+	zone, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		WriteResponse(w, http.StatusInternalServerError, "failed to load timezone")
+	}
+
 	// TODO: Abstract DB logic in DB specific controller
 	_, err = h.Client.db.PutItem(r.Context(), &dynamodb.PutItemInput{
 		TableName: aws.String(tableName),
@@ -77,6 +83,9 @@ func (h *Handler) RegisterServer(w http.ResponseWriter, r *http.Request) {
 			},
 			"ServerName": &types.AttributeValueMemberS{
 				Value: *ck.Name,
+			},
+			"LastUpdated": &types.AttributeValueMemberS{
+				Value: time.Now().In(zone).Format(time.DateTime),
 			},
 		},
 	})
