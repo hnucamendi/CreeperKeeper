@@ -45,6 +45,8 @@ func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) 
 		return "", fmt.Errorf("failed to unmarshall event details")
 	}
 
+  fmt.Printf("TAMO EVENT: %+v\n", event)
+
 	fmt.Printf("%+v", detail)
 
 	c, err := initAWSClients(ctx)
