@@ -11,20 +11,23 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
-	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 )
 
 type EC2State int
 
 const (
-	STOP EC2State = iota
-	START
-	TERMINATE
+	PENDING EC2State = iota
+	SHUTTINGDOWN
+	STOPPING
+	TERMINATED
+	RUNNING
+	STOPPED
+	NOTFOUND
 )
 
-func getInstanceIP(ctx context.Context, client *ec2.Client, instanceID *string) (*string, error) {
+func getInstanceIP(ctx context.Context, client *ec2.Client, serverID *string) (*string, error) {
 	input := &ec2.DescribeInstancesInput{
-		InstanceIds: []string{*instanceID},
+		InstanceIds: []string{*serverID},
 	}
 
 	out, err := client.DescribeInstances(ctx, input)
@@ -52,37 +55,63 @@ func getInstanceIP(ctx context.Context, client *ec2.Client, instanceID *string) 
 //
 // - 16 : running
 // - 80 : stopped
-func describeInstanceStatus(ctx context.Context, client *ec2.Client, instanceID string, desiredState EC2State) (types.InstanceStatus, error) {
+func getServerStatus(ctx context.Context, client *ec2.Client, serverID *string) (EC2State, error) {
 	describeInput := &ec2.DescribeInstanceStatusInput{
-		InstanceIds:         []string{instanceID},
+		InstanceIds:         []string{*serverID},
 		IncludeAllInstances: aws.Bool(true),
 	}
 
 	out, err := client.DescribeInstanceStatus(ctx, describeInput)
 	if err != nil {
-		return types.InstanceStatus{}, err
+		return NOTFOUND, err
 	}
 
 	// Check if InstanceStatuses is empty
 	if len(out.InstanceStatuses) == 0 {
-		return types.InstanceStatus{}, fmt.Errorf("instance status is not available for instance ID: %s", instanceID)
+		return NOTFOUND, fmt.Errorf("instance status is not available for instance ID: %s", *serverID)
 	}
 
-	instanceStatus := out.InstanceStatuses[0]
+	instanceStatus := *out.InstanceStatuses[0].InstanceState.Code
 
-	return instanceStatus, nil
+	switch instanceStatus {
+	case 0:
+		return PENDING, nil
+	case 32:
+		return SHUTTINGDOWN, nil
+	case 64:
+		return STOPPING, nil
+	case 48:
+		return TERMINATED, nil
+	case 16:
+		return RUNNING, nil
+	case 80:
+		return STOPPED, nil
+	default:
+		return NOTFOUND, nil
+	}
 }
 
 func StartEC2Instance(ctx context.Context, client *ec2.Client, serverID *string) (*string, error) {
-	startInput := &ec2.StartInstancesInput{
-		InstanceIds: []string{*serverID},
-	}
-	out, err := client.StartInstances(ctx, startInput)
+	status, err := getServerStatus(ctx, client, serverID)
 	if err != nil {
-		return nil, fmt.Errorf("error starting instance: %v", err)
+		return nil, err
 	}
 
-	fmt.Printf("SERVER METADATA: %+v", out.ResultMetadata)
+  if status == STOPPING || status == TERMINATED || status==SHUTTINGDOWN || status == PENDING || status == NOTFOUND {
+    return nil, fmt.Errorf("EC2 is in an invalid state, code: %v", status)
+  }
+
+	if status == STOPPED {
+		startInput := &ec2.StartInstancesInput{
+			InstanceIds: []string{*serverID},
+		}
+		out, err := client.StartInstances(ctx, startInput)
+		if err != nil {
+			return nil, fmt.Errorf("error starting instance: %v", err)
+		}
+
+		fmt.Printf("SERVER METADATA: %+v", out.ResultMetadata)
+	}
 
 	// Get the public IP address of the instance
 	ip, err := getInstanceIP(ctx, client, serverID)

@@ -132,7 +132,9 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("TAMMOO")
 	newServerIP, err := ckec2.Retry(r.Context(), func() (*string, error) {
+		fmt.Println("TAMO in retry")
 		newServerIP, err := ckec2.StartEC2Instance(r.Context(), h.Client.ec, ck.ID)
 		return newServerIP, err
 	}, 10)
@@ -140,6 +142,7 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	fmt.Println("Tamo out of retry")
 
 	commands := []string{"sudo docker start " + *ck.Name, "echo " + *ck.Name + " " + *ck.ID + " " + *ck.IP + " >> test.txt"}
 	input := &ssm.SendCommandInput{
@@ -150,6 +153,7 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 			"workingDirectory": {"/home/ec2-user"},
 		},
 	}
+	fmt.Println("sending commands to ec2")
 	_, err = h.Client.sc.SendCommand(r.Context(), input)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to start minecraft server: %s", err.Error()))
