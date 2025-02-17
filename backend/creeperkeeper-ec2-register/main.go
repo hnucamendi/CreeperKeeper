@@ -125,7 +125,7 @@ func handleRunningState(ctx context.Context, detail *Detail, clients *Clients) e
 		return err
 	}
 
-	err = registerServerDetails(ctx, clients, &detail.InstanceID, ip, name)
+	err = registerServerDetails(clients, &detail.InstanceID, ip, name)
 	if err != nil {
 		return fmt.Errorf("failed to register server %w", err)
 	}
