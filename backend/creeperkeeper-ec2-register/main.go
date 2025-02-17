@@ -30,12 +30,14 @@ var (
 	ec2Client  *ec2.Client
 	ssmClient  *ssm.Client
 	httpClient *http.Client
+	jwtClient  *jwt.JWTClient
 )
 
 type Clients struct {
 	ec2Client  *ec2.Client
 	ssmClient  *ssm.Client
 	httpClient *http.Client
+	jwtClient  *jwt.JWTClient
 }
 
 func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) {
@@ -44,10 +46,6 @@ func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) 
 	if err != nil {
 		return "", fmt.Errorf("failed to unmarshall event details")
 	}
-
-	fmt.Printf("TAMO EVENT: %+v\n", string(event.Detail))
-
-	fmt.Printf("%+v", detail)
 
 	c, err := initAWSClients(ctx)
 	if err != nil {
@@ -86,6 +84,10 @@ func initAWSClients(ctx context.Context) (*Clients, error) {
 		c.httpClient = httpClient
 	}
 
+	if jwtClient != nil {
+		c.jwtClient = jwtClient
+	}
+
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config: %v", err)
@@ -96,50 +98,32 @@ func initAWSClients(ctx context.Context) (*Clients, error) {
 	c.httpClient = &http.Client{
 		Timeout: 2 * time.Minute,
 	}
+
+	id, secret, audience, url, err := getParameters(ctx, c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load parameters for JWT client")
+	}
+
+	c.jwtClient = jwt.NewJWTClient(
+		jwt.JWTClientID(*id),
+		jwt.JWTClientSecret(*secret),
+		jwt.JWTAudience(*audience),
+		jwt.JWTGrantType("client_credentials"),
+		jwt.JWTTenantURL(*url),
+	)
 	return c, nil
 }
 
-func handleRunningState(ctx context.Context, detail *Detail, clients *Clients) (bool, error) {
+func handleRunningState(ctx context.Context, detail *Detail, clients *Clients) error {
 	ip, name, err := getInstanceDetails(ctx, &detail.InstanceID, clients.ec2Client)
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	fmt.Println("TAMO IP", ip)
-	fmt.Println("TAMO NAME", name)
-
-	clientID, err := getParameter(ctx, "/creeperkeeper/jwt/client/id", clients.ssmClient)
+	token, err := clients.jwtClient.GenerateToken(http.DefaultClient)
 	if err != nil {
-		return false, err
+		return err
 	}
-	clientSecret, err := getParameter(ctx, "/creeperkeeper/jwt/client/secret", clients.ssmClient)
-	if err != nil {
-		return false, err
-	}
-	audience, err := getParameter(ctx, "/creeperkeeper/jwt/client/audience", clients.ssmClient)
-	if err != nil {
-		return false, err
-	}
-	tenantURL, err := getParameter(ctx, "/creeperkeeper/jwt/client/url", clients.ssmClient)
-	if err != nil {
-		return false, err
-	}
-
-	jc := jwt.NewJWTClient(
-		jwt.JWTClientID(*clientID),
-		jwt.JWTClientSecret(*clientSecret),
-		jwt.JWTAudience(*audience),
-    jwt.JWTGrantType("client_credentials"),
-		jwt.JWTTenantURL(*tenantURL),
-	)
-
-	token, err := jc.GenerateToken(http.DefaultClient)
-	if err != nil {
-		return false, err
-	}
-
-	fmt.Printf("JWT CLIENT: %+v\n", jc)
-	fmt.Println("TAMO TOKEN", token)
 
 	body := map[string]*string{
 		"serverID":   &detail.InstanceID,
@@ -149,30 +133,31 @@ func handleRunningState(ctx context.Context, detail *Detail, clients *Clients) (
 
 	jbody, err := json.Marshal(body)
 	if err != nil {
-		return false, err
+		return err
 	}
-
-	fmt.Println(string(jbody))
 
 	req, err := http.NewRequest("POST", baseURL+"/server/register", bytes.NewBuffer(jbody))
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	req.Header.Add("Authorization", "Bearer "+token)
 
 	res, err := clients.httpClient.Do(req)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
-		return false, fmt.Errorf("failed to register server in DB %v", res.Status)
+		return fmt.Errorf("failed to register server in DB %v", res.Status)
 	}
 
-	return true, nil
+  //TODO: Handle starting server
+
+
+	return nil
 }
 
 func handleStoppingState(ctx context.Context, detail *Detail, clients *Clients) {
@@ -219,6 +204,26 @@ func getParameter(ctx context.Context, path string, ssmClient *ssm.Client) (*str
 		return nil, fmt.Errorf("failed to get parameter: %w", err)
 	}
 	return out.Parameter.Value, nil
+}
+
+func getParameters(ctx context.Context, c *Clients) (*string, *string, *string, *string, error) {
+	clientID, err := getParameter(ctx, "/creeperkeeper/jwt/client/id", c.ssmClient)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	clientSecret, err := getParameter(ctx, "/creeperkeeper/jwt/client/secret", c.ssmClient)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	audience, err := getParameter(ctx, "/creeperkeeper/jwt/client/audience", c.ssmClient)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	tenantURL, err := getParameter(ctx, "/creeperkeeper/jwt/client/url", c.ssmClient)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	return clientID, clientSecret, audience, tenantURL, nil
 }
 
 func main() {
