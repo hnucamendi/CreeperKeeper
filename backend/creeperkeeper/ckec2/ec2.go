@@ -92,14 +92,17 @@ func getServerStatus(ctx context.Context, client *ec2.Client, serverID *string) 
 }
 
 func StartEC2Instance(ctx context.Context, client *ec2.Client, serverID *string) (*string, error) {
+	if serverID == nil {
+		return nil, fmt.Errorf("serverID must not be nil: %v", serverID)
+	}
 	status, err := getServerStatus(ctx, client, serverID)
 	if err != nil {
 		return nil, err
 	}
 
-  if status == STOPPING || status == TERMINATED || status==SHUTTINGDOWN || status == PENDING || status == NOTFOUND {
-    return nil, fmt.Errorf("EC2 is in an invalid state, code: %v", status)
-  }
+	if status == STOPPING || status == TERMINATED || status == SHUTTINGDOWN || status == PENDING || status == NOTFOUND {
+		return nil, fmt.Errorf("EC2 is in an invalid state, code: %v", status)
+	}
 
 	if status == STOPPED {
 		startInput := &ec2.StartInstancesInput{
