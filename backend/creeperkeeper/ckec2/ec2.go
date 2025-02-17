@@ -91,17 +91,18 @@ func getServerStatus(ctx context.Context, client *ec2.Client, serverID *string) 
 	}
 }
 
-func StartEC2Instance(ctx context.Context, client *ec2.Client, serverID *string) (*string, error) {
+func StartEC2Instance(ctx context.Context, client *ec2.Client, serverID *string) error {
 	if serverID == nil {
-		return nil, fmt.Errorf("serverID must not be nil: %v", serverID)
+		return fmt.Errorf("serverID must not be nil: %v", serverID)
 	}
+
 	status, err := getServerStatus(ctx, client, serverID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if status == STOPPING || status == TERMINATED || status == SHUTTINGDOWN || status == PENDING || status == NOTFOUND {
-		return nil, fmt.Errorf("EC2 is in an invalid state, code: %v", status)
+		return fmt.Errorf("EC2 is in an invalid state, code: %v", status)
 	}
 
 	if status == STOPPED {
@@ -110,19 +111,13 @@ func StartEC2Instance(ctx context.Context, client *ec2.Client, serverID *string)
 		}
 		out, err := client.StartInstances(ctx, startInput)
 		if err != nil {
-			return nil, fmt.Errorf("error starting instance: %v", err)
+			return fmt.Errorf("error starting instance: %v", err)
 		}
 
 		fmt.Printf("SERVER METADATA: %+v", out.ResultMetadata)
 	}
 
-	// Get the public IP address of the instance
-	ip, err := getInstanceIP(ctx, client, serverID)
-	if err != nil {
-		return nil, fmt.Errorf("error getting instance IP address: %v", err)
-	}
-
-	return ip, nil
+	return nil
 }
 
 func StopEC2Instance(ctx context.Context, client *ec2.Client, serverID *string) error {
