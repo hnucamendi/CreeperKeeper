@@ -18,8 +18,8 @@ import (
 )
 
 type Detail struct {
-	State      string
-	InstanceID string
+	State      string `json:"state"`
+	InstanceID string `json:"instance-id"`
 }
 
 const (
@@ -45,7 +45,7 @@ func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) 
 		return "", fmt.Errorf("failed to unmarshall event details")
 	}
 
-  fmt.Printf("TAMO EVENT: %+v\n", event)
+	fmt.Printf("TAMO EVENT: %+v\n", string(event.Detail))
 
 	fmt.Printf("%+v", detail)
 
