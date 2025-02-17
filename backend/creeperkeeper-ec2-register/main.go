@@ -201,7 +201,7 @@ func getParameters(ctx context.Context, c *Clients) (*string, *string, *string, 
 	return clientID, clientSecret, audience, tenantURL, nil
 }
 
-func registerServerDetails(ctx context.Context, c *Clients, serverID *string, serverIP *string, serverName *string) error {
+func registerServerDetails(c *Clients, serverID *string, serverIP *string, serverName *string) error {
 	body := map[string]*string{
 		"serverID":   serverID,
 		"serverIP":   serverIP,
