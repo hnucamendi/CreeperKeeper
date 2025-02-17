@@ -160,13 +160,13 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 	out, err := h.Client.sc.SendCommand(r.Context(), input)
 	if err != nil {
 		fmt.Println("ERROR TAMO", err)
-		WriteResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to start minecraft server: %s", err.Error()))
+		WriteResponse(w, http.StatusInternalServerError, "failed to start minecraft server: "+err.Error())
 		return
 	}
 
-	fmt.Printf("%+v", *out)
-	fmt.Printf("%+v", *out.Command)
-	fmt.Printf("%+v", out.ResultMetadata)
+	fmt.Printf("TAMO OUT %+v\n", *out)
+	fmt.Printf("TAMO COMMAND %+v\n", *out.Command)
+	fmt.Printf("TAMO RESULTMETA %+v\n", out.ResultMetadata)
 
 	WriteResponse(w, http.StatusOK, "Server Started")
 }
