@@ -141,17 +141,6 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err := h.updateServerIP(ck.ID, newServerIP)
-	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	if !ok {
-		WriteResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to update database with new serverIP"))
-		return
-	}
-
 	commands := []string{"sudo docker start " + *ck.Name, "echo " + *ck.Name + " " + *ck.ID + " " + *ck.IP + " >> test.txt"}
 	input := &ssm.SendCommandInput{
 		DocumentName: aws.String("AWS-RunShellScript"),
@@ -167,7 +156,7 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	WriteResponse(w, http.StatusOK, nil)
+	WriteResponse(w, http.StatusOK, *newServerIP)
 }
 
 func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
@@ -224,31 +213,6 @@ func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
 		return
 	}
 	w.Write(jMessage)
-}
-
-func (h *Handler) updateServerIP(serverID *string, newServerIP *string) (bool, error) {
-	input := &dynamodb.UpdateItemInput{
-		TableName: aws.String(tableName),
-		Key: map[string]types.AttributeValue{
-			"PK": &types.AttributeValueMemberS{
-				Value: *serverID,
-			},
-		},
-		UpdateExpression: aws.String("SET ServerIP = :sip"),
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			"ServerIP": &types.AttributeValueMemberS{
-				Value: *newServerIP,
-			},
-		},
-	}
-
-	out, err := h.Client.db.UpdateItem(context.Background(), input)
-	if err != nil {
-		return false, err
-	}
-
-	fmt.Printf("UPDATE META %+v, %+v", out.ResultMetadata, out.Attributes)
-	return true, nil
 }
 
 func loadEnvVars(ctx context.Context, sc *ssm.Client) (clientID string, clientSecret string, audience string, err error) {
