@@ -133,11 +133,7 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Println("TAMMOO")
-	// newServerIP, err := ckec2.Retry(r.Context(), func() (*string, error) {
-	// fmt.Println("TAMO in retry")
 	err = ckec2.StartEC2Instance(r.Context(), h.Client.ec, ck.ID)
-	// return newServerIP, err
-	// }, 10)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -147,26 +143,11 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		"sudo docker start " + *ck.Name,
 		"echo " + *ck.Name + " " + *ck.ID + " >> test.txt",
 	}
-
-	input := &ssm.SendCommandInput{
-		DocumentName: aws.String("AWS-RunShellScript"),
-		InstanceIds:  []string{*ck.ID},
-		Parameters: map[string][]string{
-			"commands":         commands,
-			"workingDirectory": {"/home/ec2-user"},
-		},
-	}
-	fmt.Println("sending commands to ec2")
-	out, err := h.Client.sc.SendCommand(r.Context(), input)
+	err = ckec2.SendSSMCommandToServer(r.Context(), *h.Client.sc, *h.Client.ec, ck.ID, commands)
 	if err != nil {
-		fmt.Println("ERROR TAMO", err)
-		WriteResponse(w, http.StatusInternalServerError, "failed to start minecraft server: "+err.Error())
+		WriteResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
-	fmt.Printf("TAMO OUT %+v\n", *out)
-	fmt.Printf("TAMO COMMAND %+v\n", *out.Command)
-	fmt.Printf("TAMO RESULTMETA %+v\n", out.ResultMetadata)
 
 	WriteResponse(w, http.StatusOK, "Server Started")
 }

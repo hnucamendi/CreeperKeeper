@@ -11,6 +11,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/service/ssm"
 )
 
 type EC2State int
@@ -165,6 +166,45 @@ func Retry[T any](ctx context.Context, fn func() (T, error), attempts int) (T, e
 		}
 	}
 	return zero, fmt.Errorf("after %d attempts, last error: %w", attempts, err)
+}
+
+func SendSSMCommandToServer(ctx context.Context, sc ssm.Client, ec ec2.Client, serverID *string, cmds []string) error {
+	// initial status
+	status, err := getServerStatus(ctx, &ec, serverID)
+	if err != nil {
+		return err
+	}
+
+	if status == TERMINATED || status == SHUTTINGDOWN || status == STOPPING || status == NOTFOUND {
+		return fmt.Errorf("status is unstartable, exiting early. status code: %d", status)
+	}
+
+	var i int
+	for status != RUNNING {
+		time.Sleep(time.Duration(1<<i) * time.Second)
+		i++
+	}
+
+	input := &ssm.SendCommandInput{
+		DocumentName: aws.String("AWS-RunShellScript"),
+		InstanceIds:  []string{*serverID},
+		Parameters: map[string][]string{
+			"commands":         cmds,
+			"workingDirectory": {"/home/ec2-user"},
+		},
+	}
+	out, err := sc.SendCommand(ctx, input)
+	if err != nil {
+		return fmt.Errorf("ERROR TAMO %v", err)
+	}
+
+	jmeta, err := json.Marshal(out.ResultMetadata)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("TAMO RESULTMETA " + string(jmeta))
+
+	return nil
 }
 
 func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
