@@ -122,11 +122,16 @@ func handleRunningState(ctx context.Context, detail *Detail, clients *Clients) (
 	if err != nil {
 		return false, err
 	}
+	tenantURL, err := getParameter(ctx, "/creeperkeeper/jwt/client/url", clients.ssmClient)
+	if err != nil {
+		return false, err
+	}
 
 	jc := jwt.NewJWTClient(
 		jwt.JWTClientID(*clientID),
 		jwt.JWTClientSecret(*clientSecret),
 		jwt.JWTAudience(*audience),
+		jwt.JWTTenantURL(*tenantURL),
 	)
 
 	token, err := jc.GenerateToken(http.DefaultClient)
