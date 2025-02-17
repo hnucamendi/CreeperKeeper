@@ -50,7 +50,11 @@ resource "aws_iam_role_policy" "main" {
         Resource = "*"
       },
       {
-        Action   = ["ec2:DescribeInstances"],
+        Action = [
+          "ec2:DescribeInstances",
+          "ec2:StartInstances",
+          "ec2:StopInstances",
+        ],
         Effect   = "Allow",
         Resource = "*"
       },
