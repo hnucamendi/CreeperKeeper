@@ -142,9 +142,13 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	// fmt.Println("Tamo out of retry")
+	fmt.Println("TAMO IP: " + *newServerIP)
 
-	commands := []string{"sudo docker start " + *ck.Name, "echo " + *ck.Name + " " + *ck.ID + " " + *ck.IP + " >> test.txt"}
+	commands := []string{
+		"sudo docker start " + *ck.Name,
+		"echo " + *ck.Name + " " + *ck.ID + " >> test.txt",
+	}
+
 	input := &ssm.SendCommandInput{
 		DocumentName: aws.String("AWS-RunShellScript"),
 		InstanceIds:  []string{*ck.ID},
