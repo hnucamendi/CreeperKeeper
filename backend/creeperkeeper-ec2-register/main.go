@@ -54,7 +54,7 @@ func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) 
 
 	switch detail.State {
 	case "running":
-		_, err := handleRunningState(ctx, detail, c)
+		err := handleRunningState(ctx, detail, c)
 		if err != nil {
 			return "", fmt.Errorf("failed to register server on state: %q error: %w", detail.State, err)
 		}
@@ -120,42 +120,17 @@ func handleRunningState(ctx context.Context, detail *Detail, clients *Clients) e
 		return err
 	}
 
-	token, err := clients.jwtClient.GenerateToken(http.DefaultClient)
+	_, err = clients.jwtClient.GenerateToken(http.DefaultClient)
 	if err != nil {
 		return err
 	}
 
-	body := map[string]*string{
-		"serverID":   &detail.InstanceID,
-		"serverIP":   ip,
-		"serverName": name,
-	}
-
-	jbody, err := json.Marshal(body)
+	err = registerServerDetails(ctx, clients, &detail.InstanceID, ip, name)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to register server %w", err)
 	}
 
-	req, err := http.NewRequest("POST", baseURL+"/server/register", bytes.NewBuffer(jbody))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Add("Authorization", "Bearer "+token)
-
-	res, err := clients.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-
-	defer res.Body.Close()
-
-	if res.StatusCode != 200 {
-		return fmt.Errorf("failed to register server in DB %v", res.Status)
-	}
-
-  //TODO: Handle starting server
-
+	//TODO: Handle starting server
 
 	return nil
 }
@@ -224,6 +199,39 @@ func getParameters(ctx context.Context, c *Clients) (*string, *string, *string, 
 		return nil, nil, nil, nil, err
 	}
 	return clientID, clientSecret, audience, tenantURL, nil
+}
+
+func registerServerDetails(ctx context.Context, c *Clients, serverID *string, serverIP *string, serverName *string) error {
+	body := map[string]*string{
+		"serverID":   serverID,
+		"serverIP":   serverIP,
+		"serverName": serverName,
+	}
+
+	jbody, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", baseURL+"/server/register", bytes.NewBuffer(jbody))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Add("Authorization", "Bearer "+c.jwtClient.AuthToken)
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		return fmt.Errorf("failed to register server in DB %v", res.Status)
+	}
+
+	return nil
 }
 
 func main() {
