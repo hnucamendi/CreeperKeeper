@@ -54,7 +54,12 @@ func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) 
 
 	switch detail.State {
 	case "running":
-		handleRunningState(ctx, detail, c)
+		fmt.Println("TAMO made it here", detail.State)
+		_, err := handleRunningState(ctx, detail, c)
+		if err != nil {
+			fmt.Errorf("failed to register server on state: %s error: %w", detail.State, err)
+		}
+
 	case "stopping":
 		handleStoppingState(ctx, detail, c)
 	default:
@@ -97,6 +102,9 @@ func handleRunningState(ctx context.Context, detail *Detail, clients *Clients) (
 		return false, err
 	}
 
+	fmt.Println("TAMO IP", ip)
+	fmt.Println("TAMO NAME", name)
+
 	clientID, err := getParameter(ctx, "/creeperkeeper/jwt/client/id", clients.ssmClient)
 	if err != nil {
 		return false, err
@@ -121,7 +129,7 @@ func handleRunningState(ctx context.Context, detail *Detail, clients *Clients) (
 		return false, err
 	}
 
-	fmt.Println(token)
+	fmt.Println("TAMO", token)
 
 	body := map[string]*string{
 		"serverID":   &detail.InstanceID,
@@ -156,7 +164,7 @@ func handleRunningState(ctx context.Context, detail *Detail, clients *Clients) (
 }
 
 func handleStoppingState(ctx context.Context, detail *Detail, clients *Clients) {
-  // TODO: Implement Logic to save world data to S3
+	// TODO: Implement Logic to save world data to S3
 }
 
 func getInstanceDetails(ctx context.Context, instanceID *string, ec *ec2.Client) (*string, *string, error) {
