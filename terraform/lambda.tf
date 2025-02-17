@@ -54,6 +54,7 @@ resource "aws_iam_role_policy" "main" {
           "ec2:DescribeInstances",
           "ec2:StartInstances",
           "ec2:StopInstances",
+          "ec2:DescribeInstanceStatus",
         ],
         Effect   = "Allow",
         Resource = "*"
