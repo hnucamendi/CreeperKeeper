@@ -1,6 +1,6 @@
 module "vanilla" {
   source  = "hnucamendi/minecraft-server-module/aws"
-  version = "1.0.4"
+  version = "1.0.5"
 
   vpc_id               = var.vpc_id
   app_name             = var.ck_app_name
