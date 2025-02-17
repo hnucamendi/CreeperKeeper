@@ -97,7 +97,7 @@ func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-  // TODO: Use Dynamodb marshaller to simplify this logic
+	// TODO: Use Dynamodb marshaller to simplify this logic
 	var serverList = make([]map[string]string, len(out.Items))
 	for i := range out.Items {
 		serverList[i] = map[string]string{
@@ -143,7 +143,7 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	commands := []string{"sudo docker start " + *ck.Name}
+	commands := []string{"sudo docker start " + *ck.Name, "echo " + *ck.Name + " " + *ck.ID + " " + *ck.IP + " >> test.txt"}
 	input := &ssm.SendCommandInput{
 		DocumentName: aws.String("AWS-RunShellScript"),
 		InstanceIds:  []string{*ck.ID},
