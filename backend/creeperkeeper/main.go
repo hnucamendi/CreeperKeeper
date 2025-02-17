@@ -17,6 +17,10 @@ import (
 	"golang.org/x/exp/rand"
 )
 
+const (
+	tableName string = "creeperkeeper"
+)
+
 var (
 	mux *http.ServeMux
 	sc  *ssm.Client

@@ -64,7 +64,7 @@ func (h *Handler) RegisterServer(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Abstract DB logic in DB specific controller
 	_, err = h.Client.db.PutItem(r.Context(), &dynamodb.PutItemInput{
-		TableName: aws.String("CreeperKeeper"),
+		TableName: aws.String(tableName),
 		Item: map[string]types.AttributeValue{
 			"PK": &types.AttributeValueMemberS{
 				Value: *ck.ID,
@@ -90,7 +90,7 @@ func (h *Handler) RegisterServer(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
 	out, err := h.Client.db.Scan(r.Context(), &dynamodb.ScanInput{
-		TableName: aws.String("CreeperKeeper"),
+		TableName: aws.String(tableName),
 	})
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())
@@ -219,7 +219,7 @@ func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
 
 func (h *Handler) updateServerIP(serverID *string, newServerIP *string) (bool, error) {
 	input := &dynamodb.UpdateItemInput{
-		TableName: aws.String("CreeperKeeper"),
+		TableName: aws.String(tableName),
 		Key: map[string]types.AttributeValue{
 			"PK": &types.AttributeValueMemberS{
 				Value: *serverID,

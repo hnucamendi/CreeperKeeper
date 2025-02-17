@@ -176,7 +176,7 @@ func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
 //
 // 	// Delete the item from the DynamoDB table
 // 	input := &dynamodb.DeleteItemInput{
-// 		TableName: aws.String("CreeperKeeper"),
+// 		TableName: aws.String(tableName),
 // 		Key: map[string]types.AttributeValue{
 // 			"PK": &types.AttributeValueMemberS{Value: instanceID},
 // 			"SK": &types.AttributeValueMemberS{Value: "instance"},

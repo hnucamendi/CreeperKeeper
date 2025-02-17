@@ -45,7 +45,7 @@ resource "aws_iam_role_policy" "main" {
         Effect = "Allow"
         Action = [
           "execute-api:ManageConnections",
-          "execute-api:Invoke"
+          "execute-api:Invoke",
         ],
         Resource = "*"
       },
@@ -81,7 +81,8 @@ resource "aws_iam_role_policy" "main" {
           "lambda:InvokeFunction"
         ],
         Resource = [
-          aws_lambda_function.controller.arn
+          aws_lambda_function.controller.arn,
+          aws_lambda_function.ec2_monitor.arn,
         ]
       },
     ]
