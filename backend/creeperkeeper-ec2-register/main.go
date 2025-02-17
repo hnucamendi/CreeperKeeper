@@ -120,7 +120,7 @@ func handleRunningState(ctx context.Context, detail *Detail, clients *Clients) e
 		return err
 	}
 
-	_, err = clients.jwtClient.GenerateToken(http.DefaultClient)
+	_, err = clients.jwtClient.GenerateToken(clients.httpClient)
 	if err != nil {
 		return err
 	}
@@ -130,7 +130,10 @@ func handleRunningState(ctx context.Context, detail *Detail, clients *Clients) e
 		return fmt.Errorf("failed to register server %w", err)
 	}
 
-	//TODO: Handle starting server
+	err = startServer(clients, name, &detail.InstanceID)
+	if err != nil {
+		return fmt.Errorf("failed to start MC server %w", err)
+	}
 
 	return nil
 }
@@ -229,6 +232,38 @@ func registerServerDetails(c *Clients, serverID *string, serverIP *string, serve
 
 	if res.StatusCode != 200 {
 		return fmt.Errorf("failed to register server in DB %v", res.Status)
+	}
+
+	return nil
+}
+
+func startServer(c *Clients, serverName *string, serverID *string) error {
+	body := map[string]*string{
+		"serverID":   serverID,
+		"serverName": serverName,
+	}
+
+	jbody, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", baseURL+"/server/start", bytes.NewBuffer(jbody))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Add("Authorization", "Bearer "+c.jwtClient.AuthToken)
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		return fmt.Errorf("failed to start server status: %v", res.Status)
 	}
 
 	return nil
