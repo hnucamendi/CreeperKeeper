@@ -56,11 +56,9 @@ func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) 
 
 	switch detail.State {
 	case "running":
-		fmt.Println("TAMO made it here", detail.State)
 		_, err := handleRunningState(ctx, detail, c)
 		if err != nil {
-			fmt.Println("TAMO ERR CHECK", err)
-			return "", fmt.Errorf("failed to register server on state: %s error: %w", detail.State, err)
+			return "", fmt.Errorf("failed to register server on state: %q error: %w", detail.State, err)
 		}
 
 		return "Success", nil
@@ -131,6 +129,7 @@ func handleRunningState(ctx context.Context, detail *Detail, clients *Clients) (
 		jwt.JWTClientID(*clientID),
 		jwt.JWTClientSecret(*clientSecret),
 		jwt.JWTAudience(*audience),
+    jwt.JWTGrantType("client_credentials"),
 		jwt.JWTTenantURL(*tenantURL),
 	)
 
@@ -139,7 +138,8 @@ func handleRunningState(ctx context.Context, detail *Detail, clients *Clients) (
 		return false, err
 	}
 
-	fmt.Println("TAMO", token)
+	fmt.Printf("JWT CLIENT: %+v\n", jc)
+	fmt.Println("TAMO TOKEN", token)
 
 	body := map[string]*string{
 		"serverID":   &detail.InstanceID,
@@ -151,6 +151,8 @@ func handleRunningState(ctx context.Context, detail *Detail, clients *Clients) (
 	if err != nil {
 		return false, err
 	}
+
+	fmt.Println(string(jbody))
 
 	req, err := http.NewRequest("POST", baseURL+"/server/register", bytes.NewBuffer(jbody))
 	if err != nil {
