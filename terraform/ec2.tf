@@ -26,6 +26,37 @@ module "vanilla" {
   }
 }
 
+resource "aws_iam_policy" "s3_policy" {
+  name        = "${var.ck_app_name}-s3-policy"
+  description = "Policy granting S3 permissions for the Minecraft server instance"
+  policy      = jsonencode({
+    Version   = "2012-10-17",
+    Statement = [
+      {
+        Sid      = "AllowListBucket",
+        Effect   = "Allow",
+        Action   = [ "s3:ListBucket" ],
+        Resource = "arn:aws:s3:::creeperkeeper-world-data"
+      },
+      {
+        Sid      = "AllowBucketObjectActions",
+        Effect   = "Allow",
+        Action   = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ],
+        Resource = "arn:aws:s3:::creeperkeeper-world-data/*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "s3_policy_attachment" {
+  role       = "${var.ck_app_name}-iam-role"
+  policy_arn = aws_iam_policy.s3_policy.arn
+}
+
 // Direwolf modpack
 // module "ftb_server" {
 //   source  = "hnucamendi/minecraft-server-module/aws"

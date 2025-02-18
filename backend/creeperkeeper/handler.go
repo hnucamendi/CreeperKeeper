@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -165,9 +166,15 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 			"workingDirectory": {"/home/ec2-user"},
 		},
 	}
-	_, err = h.Client.sc.SendCommand(r.Context(), input)
+	out, err := h.Client.sc.SendCommand(r.Context(), input)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to stop minecraft server: %s", err.Error()))
+		return
+	}
+
+	err = getCommandOutput(r.Context(), h.Client.sc, out.Command.CommandId, ck.ID)
+	if err != nil {
+		WriteResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to poll for command output %w", err))
 		return
 	}
 
@@ -178,6 +185,35 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteResponse(w, http.StatusOK, "Server stopping")
+}
+
+// getCommandOutput polls until the command is finished and prints its output.
+func getCommandOutput(ctx context.Context, client *ssm.Client, commandID *string, instanceID *string) error {
+	for {
+		invocation, err := client.GetCommandInvocation(ctx, &ssm.GetCommandInvocationInput{
+			CommandId:  aws.String(*commandID),
+			InstanceId: aws.String(*instanceID),
+		})
+		if err != nil {
+			return fmt.Errorf("error getting command invocation: %w", err)
+		}
+
+		// Check if the command is still running.
+		if invocation.Status == "InProgress" || invocation.Status == "Pending" {
+			fmt.Println("Command still running. Waiting 5 seconds...")
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		// Once the command has finished, print the outputs.
+		fmt.Printf("Command Status: %s\n", invocation.Status)
+		fmt.Println("Standard Output:")
+		fmt.Println(invocation.StandardOutputContent)
+		fmt.Println("Standard Error:")
+		fmt.Println(invocation.StandardErrorContent)
+		break
+	}
+	return nil
 }
 
 func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
