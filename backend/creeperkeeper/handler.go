@@ -139,10 +139,6 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	commands := []string{
-		"sudo docker start " + *ck.Name,
-		"echo " + *ck.Name + " " + *ck.ID + " >> test.txt",
-	}
 	err = ckec2.SendSSMCommandToServer(r.Context(), *h.Client.sc, *h.Client.ec, ck.ID, commands)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())

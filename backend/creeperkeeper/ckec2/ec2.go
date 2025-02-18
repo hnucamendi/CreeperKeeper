@@ -169,22 +169,6 @@ func Retry[T any](ctx context.Context, fn func() (T, error), attempts int) (T, e
 }
 
 func SendSSMCommandToServer(ctx context.Context, sc ssm.Client, ec ec2.Client, serverID *string, cmds []string) error {
-	// initial status
-	status, err := getServerStatus(ctx, &ec, serverID)
-	if err != nil {
-		return err
-	}
-
-	if status == TERMINATED || status == SHUTTINGDOWN || status == STOPPING || status == NOTFOUND {
-		return fmt.Errorf("status is unstartable, exiting early. status code: %d", status)
-	}
-
-	var i int
-	for status != RUNNING {
-		time.Sleep(time.Duration(1<<i) * time.Second)
-		i++
-	}
-
 	input := &ssm.SendCommandInput{
 		DocumentName: aws.String("AWS-RunShellScript"),
 		InstanceIds:  []string{*serverID},

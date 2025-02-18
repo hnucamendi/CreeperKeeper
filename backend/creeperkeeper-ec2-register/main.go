@@ -125,14 +125,15 @@ func handleRunningState(ctx context.Context, detail *Detail, clients *Clients) e
 		return err
 	}
 
+	// TODO: wrap these two functions in go routines
 	err = registerServerDetails(clients, &detail.InstanceID, ip, name)
 	if err != nil {
 		return fmt.Errorf("failed to register server %w", err)
 	}
 
-	err = startServer(clients, name, &detail.InstanceID)
+	err = startServer(ctx, clients, &detail.InstanceID, name)
 	if err != nil {
-		return fmt.Errorf("failed to start MC server %w", err)
+		return fmt.Errorf("failed to start minecraft server %w", err)
 	}
 
 	return nil
@@ -204,6 +205,33 @@ func getParameters(ctx context.Context, c *Clients) (*string, *string, *string, 
 	return clientID, clientSecret, audience, tenantURL, nil
 }
 
+func startServer(ctx context.Context, clients *Clients, serverID *string, serverName *string) error {
+	cmds := []string{"sudo docker start " + *serverName}
+	input := &ssm.SendCommandInput{
+		DocumentName: aws.String("AWS-RunShellScript"),
+		InstanceIds:  []string{*serverID},
+		Parameters: map[string][]string{
+			"commands":         cmds,
+			"workingDirectory": {"/home/ec2-user"},
+		},
+	}
+
+	out, err := clients.ssmClient.SendCommand(ctx, input)
+	if err != nil {
+		return fmt.Errorf("ERROR TAMO %v", err)
+	}
+
+	// TODO: remove this later
+	jmeta, err := json.Marshal(out.ResultMetadata)
+	if err != nil {
+		// this is temporary so dont exit here
+		fmt.Println(err)
+	}
+	fmt.Println("TAMO RESULTMETA " + string(jmeta))
+
+	return nil
+}
+
 func registerServerDetails(c *Clients, serverID *string, serverIP *string, serverName *string) error {
 	body := map[string]*string{
 		"serverID":   serverID,
@@ -232,38 +260,6 @@ func registerServerDetails(c *Clients, serverID *string, serverIP *string, serve
 
 	if res.StatusCode != 200 {
 		return fmt.Errorf("failed to register server in DB %v", res.Status)
-	}
-
-	return nil
-}
-
-func startServer(c *Clients, serverName *string, serverID *string) error {
-	body := map[string]*string{
-		"serverID":   serverID,
-		"serverName": serverName,
-	}
-
-	jbody, err := json.Marshal(body)
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequest("POST", baseURL+"/server/start", bytes.NewBuffer(jbody))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Add("Authorization", "Bearer "+c.jwtClient.AuthToken)
-
-	res, err := c.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-
-	defer res.Body.Close()
-
-	if res.StatusCode != 200 {
-		return fmt.Errorf("failed to start server status: %v", res.Status)
 	}
 
 	return nil
