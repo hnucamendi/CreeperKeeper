@@ -216,18 +216,10 @@ func startServer(ctx context.Context, clients *Clients, serverID *string, server
 		},
 	}
 
-	out, err := clients.ssmClient.SendCommand(ctx, input)
+	_, err := clients.ssmClient.SendCommand(ctx, input)
 	if err != nil {
 		return fmt.Errorf("ERROR TAMO %v", err)
 	}
-
-	// TODO: remove this later
-	jmeta, err := json.Marshal(out.ResultMetadata)
-	if err != nil {
-		// this is temporary so dont exit here
-		fmt.Println(err)
-	}
-	fmt.Println("TAMO RESULTMETA " + string(jmeta))
 
 	return nil
 }

@@ -109,13 +109,10 @@ func StartEC2Instance(ctx context.Context, client *ec2.Client, serverID *string)
 		startInput := &ec2.StartInstancesInput{
 			InstanceIds: []string{*serverID},
 		}
-		out, err := client.StartInstances(ctx, startInput)
+		_, err := client.StartInstances(ctx, startInput)
 		if err != nil {
 			return fmt.Errorf("error starting instance: %v", err)
 		}
-
-		jbo, _ := json.Marshal(out.ResultMetadata)
-		fmt.Println("START META", string(jbo))
 	}
 
 	return nil
