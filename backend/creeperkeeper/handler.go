@@ -132,14 +132,7 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("TAMMOO")
 	err = ckec2.StartEC2Instance(r.Context(), h.Client.ec, ck.ID)
-	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	err = ckec2.SendSSMCommandToServer(r.Context(), *h.Client.sc, *h.Client.ec, ck.ID, commands)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())
 		return
