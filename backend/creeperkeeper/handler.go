@@ -155,7 +155,7 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 
 	commands := []string{
 		"sudo docker exec -i " + *ck.Name + " rcon-cli", "stop",
-		"sudo s3 sync --delete data s3://creeperkeeper-world-data/" + *ck.Name + "/data",
+		"sudo aws s3 sync --delete data s3://creeperkeeper-world-data/" + *ck.Name + "/data",
 	}
 	input := &ssm.SendCommandInput{
 		DocumentName: aws.String("AWS-RunShellScript"),
