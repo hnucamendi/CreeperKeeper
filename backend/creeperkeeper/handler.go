@@ -156,7 +156,7 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 
 	commands := []string{
 		"sudo docker exec -i " + *ck.Name + " rcon-cli", "stop",
-		"sudo aws s3 sync --delete data s3://creeperkeeper-world-data/" + *ck.Name + "/data",
+		"sudo aws s3 sync --delete data s3://creeperkeeper-world-data/" + *ck.Name + "/",
 	}
 	input := &ssm.SendCommandInput{
 		DocumentName: aws.String("AWS-RunShellScript"),
@@ -166,15 +166,9 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 			"workingDirectory": {"/home/ec2-user"},
 		},
 	}
-	out, err := h.Client.sc.SendCommand(r.Context(), input)
+	_, err = h.Client.sc.SendCommand(r.Context(), input)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to stop minecraft server: %s", err.Error()))
-		return
-	}
-
-	err = getCommandOutput(r.Context(), h.Client.sc, out.Command.CommandId, ck.ID)
-	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, fmt.Errorf("failed to poll for command output %w", err))
 		return
 	}
 
