@@ -156,7 +156,6 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 
 	commands := []string{
 		"sudo docker exec -i " + *ck.Name + " rcon-cli", "stop",
-		`if aws s3 ls s3://creeperkeeper-world-data/` + *ck.ID + `/data/ > /dev/null 2>&1; then echo "Folder exists"; else echo "Creating folder in S3"; aws s3api put-object --bucket creeperkeeper-world-data --key "` + *ck.ID + `/data/"; fi`,
 		"sudo aws s3 sync --delete data s3://creeperkeeper-world-data/" + *ck.Name + "/",
 	}
 	input := &ssm.SendCommandInput{
