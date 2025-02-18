@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -150,11 +149,14 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if ck.ID == nil {
-		WriteResponse(w, http.StatusBadRequest, "instance_id must be provided")
+		WriteResponse(w, http.StatusBadRequest, "serverID must be provided")
 		return
 	}
 
-	commands := []string{"sudo docker exec -i " + *ck.Name + " rcon-cli", "stop"}
+	commands := []string{
+		"sudo docker exec -i " + *ck.Name + " rcon-cli", "stop",
+		"sudo s3 sync --delete data s3://creeperkeeper-world-data/" + *ck.Name + "/data",
+	}
 	input := &ssm.SendCommandInput{
 		DocumentName: aws.String("AWS-RunShellScript"),
 		InstanceIds:  []string{*ck.ID},
@@ -169,21 +171,13 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = ckec2.Retry(r.Context(), func() (*string, error) {
-		err := ckec2.StopEC2Instance(r.Context(), h.Client.ec, ck.ID)
-		return nil, err
-	}, 10)
+	err = ckec2.StopEC2Instance(r.Context(), h.Client.ec, ck.ID)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	WriteResponse(w, http.StatusOK, "Server stopping")
-}
-
-func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
-
-	WriteResponse(w, http.StatusOK, "Not implemented yet")
 }
 
 func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
@@ -195,28 +189,4 @@ func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
 		return
 	}
 	w.Write(jMessage)
-}
-
-func loadEnvVars(ctx context.Context, sc *ssm.Client) (clientID string, clientSecret string, audience string, err error) {
-	envs := []string{"/statemanager/jwt/client_id", "/statemanager/jwt/client_secret", "/statemanager/jwt/audience"}
-	out, err := sc.GetParameters(ctx, &ssm.GetParametersInput{
-		Names:          envs,
-		WithDecryption: aws.Bool(true),
-	})
-	if err != nil {
-		return "", "", "", fmt.Errorf("failed to get parameters: %w", err)
-	}
-
-	for _, p := range out.Parameters {
-		switch *p.Name {
-		case "/statemanager/jwt/client_id":
-			clientID = *p.Value
-		case "/statemanager/jwt/client_secret":
-			clientSecret = *p.Value
-		case "/statemanager/jwt/audience":
-			audience = *p.Value
-		}
-	}
-
-	return clientID, clientSecret, audience, nil
 }
