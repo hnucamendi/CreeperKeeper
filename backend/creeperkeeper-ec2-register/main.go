@@ -20,6 +20,17 @@ import (
 type Detail struct {
 	State      string `json:"state"`
 	InstanceID string `json:"instance-id"`
+	ServerIP   *string
+	ServerName *string
+}
+
+type Server struct {
+	ID          *string `json:"serverID" dynamodbav:"PK"`
+	SK          *string `json:"row" dynamodbav:"SK"`
+	IP          *string `json:"serverIP" dynamodbav:"ServerIP"`
+	Name        *string `json:"serverName" dynamodbav:"ServerName"`
+	LastUpdated *string `json:"lastUpdated" dynamodbav:"LastUpdated"`
+	IsRunning   *bool   `json:"isRunning" dynamodbav:"IsRunning"`
 }
 
 const (
@@ -32,15 +43,6 @@ var (
 	httpClient *http.Client
 	jwtClient  *jwt.JWTClient
 )
-
-type Server struct {
-	ID          *string `json:"serverID" dynamodbav:"PK"`
-	SK          *string `json:"row" dynamodbav:"SK"`
-	IP          *string `json:"serverIP" dynamodbav:"ServerIP"`
-	Name        *string `json:"serverName" dynamodbav:"ServerName"`
-	LastUpdated *string `json:"lastUpdated" dynamodbav:"LastUpdated"`
-	IsRunning   *bool   `json:"isRunning" dynamodbav:"IsRunning"`
-}
 
 type Clients struct {
 	ec2Client  *ec2.Client
@@ -57,6 +59,11 @@ func handler(ctx context.Context, event events.CloudWatchEvent) (string, error) 
 	}
 
 	c, err := initAWSClients(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	detail.ServerIP, detail.ServerName, err = getInstanceDetails(ctx, &detail.InstanceID, c.ec2Client)
 	if err != nil {
 		return "", err
 	}
@@ -124,23 +131,18 @@ func initAWSClients(ctx context.Context) (*Clients, error) {
 }
 
 func handleRunningState(ctx context.Context, detail *Detail, clients *Clients) error {
-	ip, name, err := getInstanceDetails(ctx, &detail.InstanceID, clients.ec2Client)
-	if err != nil {
-		return err
-	}
-
-	_, err = clients.jwtClient.GenerateToken(clients.httpClient)
+	_, err := clients.jwtClient.GenerateToken(clients.httpClient)
 	if err != nil {
 		return err
 	}
 
 	// TODO: wrap these two functions in go routines
-	err = registerServerDetails(clients, &detail.InstanceID, ip, name)
+	err = registerServerDetails(clients, &detail.InstanceID, detail.ServerIP, detail.ServerName)
 	if err != nil {
 		return fmt.Errorf("failed to register server %w", err)
 	}
 
-	err = startServer(ctx, clients, &detail.InstanceID, name)
+	err = startServer(ctx, clients, &detail.InstanceID, detail.ServerName)
 	if err != nil {
 		return fmt.Errorf("failed to start minecraft server %w", err)
 	}
@@ -148,8 +150,69 @@ func handleRunningState(ctx context.Context, detail *Detail, clients *Clients) e
 	return nil
 }
 
-func handleStoppingState(ctx context.Context, detail *Detail, clients *Clients) {
-	// TODO: Implement Logic to save world data to S3
+func handleStoppingState(ctx context.Context, detail *Detail, clients *Clients) error {
+	err := deregisterServerDetails(clients, &detail.InstanceID, detail.ServerIP, detail.ServerName)
+	if err != nil {
+		return err
+	}
+
+	commands := []string{
+		"sudo docker exec -i " + *detail.ServerName + " rcon-cli", "stop",
+		"sudo aws s3 sync --delete data s3://creeperkeeper-world-data/" + *detail.ServerName + "/",
+	}
+	input := &ssm.SendCommandInput{
+		DocumentName: aws.String("AWS-RunShellScript"),
+		InstanceIds:  []string{detail.InstanceID},
+		Parameters: map[string][]string{
+			"commands":         commands,
+			"workingDirectory": {"/home/ec2-user"},
+		},
+	}
+	cmd, err := clients.ssmClient.SendCommand(ctx, input)
+	if err != nil {
+		return err
+	}
+
+	err = getCommandDetails(ctx, clients.ssmClient, &detail.InstanceID, cmd.Command.CommandId)
+	if err != nil {
+		fmt.Println("there was an error listing cmd status: not breaking execution")
+	}
+
+	return nil
+}
+
+func getCommandDetails(ctx context.Context, ssmClient *ssm.Client, instanceID *string, commandID *string) error {
+	listCommandsInput := &ssm.ListCommandInvocationsInput{
+		InstanceId: instanceID,
+		Details:    true,
+		CommandId:  commandID,
+	}
+	invocation, err := ssmClient.ListCommandInvocations(ctx, listCommandsInput)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("commands executed: %+v\n", invocation.CommandInvocations)
+	meta, err := json.Marshal(invocation.ResultMetadata)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("commands executed metadata: %+v\n", meta)
+
+	invocationOutput, err := ssmClient.GetCommandInvocation(ctx, &ssm.GetCommandInvocationInput{
+		CommandId:  commandID,
+		InstanceId: instanceID,
+	})
+	if err != nil {
+		return fmt.Errorf("error getting command invocation: %w", err)
+	}
+
+	fmt.Printf("Command Status: %s\n", invocationOutput.Status)
+	fmt.Println("Standard Output:")
+	fmt.Println(invocationOutput.StandardOutputContent)
+	fmt.Println("Standard Error:")
+	fmt.Println(invocationOutput.StandardErrorContent)
+	return nil
 }
 
 func getInstanceDetails(ctx context.Context, instanceID *string, ec *ec2.Client) (*string, *string, error) {
@@ -242,6 +305,51 @@ func registerServerDetails(c *Clients, serverID *string, serverIP *string, serve
 	lastUpdated := time.Now().In(zone).Format(time.DateTime)
 	sk := "serverdetails"
 	isRunning := true
+
+	body := &Server{
+		ID:          serverID,
+		SK:          &sk,
+		IP:          serverIP,
+		Name:        serverName,
+		LastUpdated: &lastUpdated,
+		IsRunning:   &isRunning,
+	}
+
+	jbody, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", baseURL+"/server/register", bytes.NewBuffer(jbody))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Add("Authorization", "Bearer "+c.jwtClient.AuthToken)
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		return fmt.Errorf("failed to register server in DB %v", res.Status)
+	}
+
+	return nil
+}
+
+func deregisterServerDetails(c *Clients, serverID *string, serverIP *string, serverName *string) error {
+	zone, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		return err
+	}
+
+	lastUpdated := time.Now().In(zone).Format(time.DateTime)
+	sk := "serverdetails"
+	isRunning := false
 
 	body := &Server{
 		ID:          serverID,
