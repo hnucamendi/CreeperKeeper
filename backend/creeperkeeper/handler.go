@@ -142,7 +142,7 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if ck.ID == nil {
-		WriteResponse(w, http.StatusBadRequest, "serverID, server name must be provided")
+		WriteResponse(w, http.StatusBadRequest, "serverID must be provided")
 		return
 	}
 
