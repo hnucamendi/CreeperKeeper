@@ -178,9 +178,10 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	}
+	inputJ, _ := json.Marshal(input)
 	out, err := h.Client.db.GetItem(r.Context(), input)
 	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		WriteResponse(w, http.StatusInternalServerError, err.Error()+"input: "+string(inputJ))
 		return
 	}
 

@@ -75,6 +75,7 @@ resource "aws_iam_role_policy" "main" {
         Effect = "Allow",
         Action = [
           "dynamodb:PutItem",
+          "dynamodb:GetItem",
           "dynamodb:Scan",
         ],
         Resource = [
