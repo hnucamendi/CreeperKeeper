@@ -151,31 +151,14 @@ func handleRunningState(ctx context.Context, detail *Detail, clients *Clients) e
 }
 
 func handleStoppingState(ctx context.Context, detail *Detail, clients *Clients) error {
-	err := deregisterServerDetails(clients, &detail.InstanceID, detail.ServerIP, detail.ServerName)
+	err := stopServer(ctx, clients, &detail.InstanceID, detail.ServerName)
 	if err != nil {
 		return err
 	}
 
-	commands := []string{
-		"sudo docker exec -i " + *detail.ServerName + " rcon-cli", "stop",
-		"sudo aws s3 sync --delete data s3://creeperkeeper-world-data/" + *detail.ServerName + "/",
-	}
-	input := &ssm.SendCommandInput{
-		DocumentName: aws.String("AWS-RunShellScript"),
-		InstanceIds:  []string{detail.InstanceID},
-		Parameters: map[string][]string{
-			"commands":         commands,
-			"workingDirectory": {"/home/ec2-user"},
-		},
-	}
-	cmd, err := clients.ssmClient.SendCommand(ctx, input)
+	err = deregisterServerDetails(clients, &detail.InstanceID, detail.ServerIP, detail.ServerName)
 	if err != nil {
 		return err
-	}
-
-	err = getCommandDetails(ctx, clients.ssmClient, &detail.InstanceID, cmd.Command.CommandId)
-	if err != nil {
-		fmt.Println("there was an error listing cmd status: not breaking execution")
 	}
 
 	return nil
@@ -291,6 +274,32 @@ func startServer(ctx context.Context, clients *Clients, serverID *string, server
 	_, err := clients.ssmClient.SendCommand(ctx, input)
 	if err != nil {
 		return fmt.Errorf("ERROR TAMO %v", err)
+	}
+
+	return nil
+}
+
+func stopServer(ctx context.Context, clients *Clients, serverID *string, serverName *string) error {
+	commands := []string{
+		"sudo docker exec -i " + *serverName + " rcon-cli", "stop",
+		"sudo aws s3 sync --delete data s3://creeperkeeper-world-data/" + *serverName + "/",
+	}
+	input := &ssm.SendCommandInput{
+		DocumentName: aws.String("AWS-RunShellScript"),
+		InstanceIds:  []string{*serverID},
+		Parameters: map[string][]string{
+			"commands":         commands,
+			"workingDirectory": {"/home/ec2-user"},
+		},
+	}
+	cmd, err := clients.ssmClient.SendCommand(ctx, input)
+	if err != nil {
+		return err
+	}
+
+	err = getCommandDetails(ctx, clients.ssmClient, serverID, cmd.Command.CommandId)
+	if err != nil {
+		fmt.Println("there was an error listing cmd status: not breaking execution")
 	}
 
 	return nil
