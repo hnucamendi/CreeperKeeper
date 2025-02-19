@@ -1,9 +1,7 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -181,10 +179,9 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	}
-	inputJ, _ := json.Marshal(input)
 	out, err := h.Client.db.GetItem(r.Context(), input)
 	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error()+"input: "+string(inputJ))
+		WriteResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -252,11 +249,6 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = getCommandDetails(r.Context(), h.Client.sc, ck.ID, cmd.Command.CommandId)
-	if err != nil {
-		fmt.Println("there was an error listing cmd status: not breaking execution ", err.Error())
-	}
-
 	err = ckec2.StopEC2Instance(r.Context(), h.Client.ec, ck.ID)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())
@@ -264,40 +256,6 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteResponse(w, http.StatusOK, "Server stopping")
-}
-
-func getCommandDetails(ctx context.Context, ssmClient *ssm.Client, instanceID *string, commandID *string) error {
-	listCommandsInput := &ssm.ListCommandInvocationsInput{
-		InstanceId: instanceID,
-		Details:    true,
-		CommandId:  commandID,
-	}
-	invocation, err := ssmClient.ListCommandInvocations(ctx, listCommandsInput)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("commands executed: %+v\n", invocation.CommandInvocations)
-	meta, err := json.Marshal(invocation.ResultMetadata)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("commands executed metadata: %+v\n", meta)
-
-	invocationOutput, err := ssmClient.GetCommandInvocation(ctx, &ssm.GetCommandInvocationInput{
-		CommandId:  commandID,
-		InstanceId: instanceID,
-	})
-	if err != nil {
-		return fmt.Errorf("error getting command invocation: %w", err)
-	}
-
-	fmt.Printf("Command Status: %s\n", invocationOutput.Status)
-	fmt.Println("Standard Output:")
-	fmt.Println(invocationOutput.StandardOutputContent)
-	fmt.Println("Standard Error:")
-	fmt.Println(invocationOutput.StandardErrorContent)
-	return nil
 }
 
 func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
