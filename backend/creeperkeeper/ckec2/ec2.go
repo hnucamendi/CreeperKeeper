@@ -122,7 +122,7 @@ func StopEC2Instance(ctx context.Context, client *ec2.Client, serverID *string) 
 	stopInput := &ec2.StopInstancesInput{
 		InstanceIds: []string{*serverID},
 	}
-	out, err := client.StopInstances(ctx, stopInput)
+	_, err := client.StopInstances(ctx, stopInput)
 	if err != nil {
 		return err
 	}
