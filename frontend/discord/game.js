@@ -1,19 +1,18 @@
 import { default as axios } from "axios";
 
-async function listAllServers() {
+export async function listAllServers() {
   const baseURL = "https://api.creeperkeeper.com";
   const serverList = [];
-  const res = await axios.get(`${baseURL}/server/list`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  //const res = await axios.get(`${baseURL}/server/list`, {
+  //  headers: {
+  //    Authorization: `Bearer token`,
+  //  },
+  //});
 
-  const response = res.data.json();
-  return response;
+  //const response = res.data.json();
+  return serverList;
 }
 
-export default listAllServers()
 //export function getResult(p1, p2) {
 //  let gameResult;
 //  if (RPSChoices[p1.objectName] && RPSChoices[p1.objectName][p2.objectName]) {

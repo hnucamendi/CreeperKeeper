@@ -18,7 +18,7 @@ async function createCommandChoices() {
 }
 
 const LIST_SERVERS_COMMAND = {
-  name: "ck-list",
+  name: "cklist",
   description: "List CreeperKeeper Servers",
   options: [
     {
