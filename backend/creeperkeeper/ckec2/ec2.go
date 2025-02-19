@@ -126,11 +126,6 @@ func StopEC2Instance(ctx context.Context, client *ec2.Client, serverID *string) 
 	if err != nil {
 		return err
 	}
-
-	fmt.Printf("Server META STOP %+v", out.ResultMetadata)
-
-	// TODO: Make sure server is stopped before returning
-
 	return nil
 }
 
