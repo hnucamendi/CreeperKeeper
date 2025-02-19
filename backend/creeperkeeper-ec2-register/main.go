@@ -299,7 +299,7 @@ func stopServer(ctx context.Context, clients *Clients, serverID *string, serverN
 
 	err = getCommandDetails(ctx, clients.ssmClient, serverID, cmd.Command.CommandId)
 	if err != nil {
-		fmt.Println("there was an error listing cmd status: not breaking execution")
+		fmt.Println("there was an error listing cmd status: not breaking execution ", err.Error())
 	}
 
 	return nil
@@ -391,6 +391,9 @@ func deregisterServerDetails(c *Clients, serverID *string, serverIP *string, ser
 	if res.StatusCode != 200 {
 		return fmt.Errorf("failed to register server in DB %v", res.Status)
 	}
+
+	resj, _ := json.Marshal(res.Body)
+	fmt.Println("response json", resj)
 
 	return nil
 }
