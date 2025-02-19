@@ -33,6 +33,15 @@ var (
 	jwtClient  *jwt.JWTClient
 )
 
+type Server struct {
+	ID          *string `json:"serverID" dynamodbav:"PK"`
+	SK          *string `json:"row" dynamodbav:"SK"`
+	IP          *string `json:"serverIP" dynamodbav:"ServerIP"`
+	Name        *string `json:"serverName" dynamodbav:"ServerName"`
+	LastUpdated *string `json:"lastUpdated" dynamodbav:"LastUpdated"`
+	IsRunning   *bool   `json:"isRunning" dynamodbav:"IsRunning"`
+}
+
 type Clients struct {
 	ec2Client  *ec2.Client
 	ssmClient  *ssm.Client
@@ -225,10 +234,22 @@ func startServer(ctx context.Context, clients *Clients, serverID *string, server
 }
 
 func registerServerDetails(c *Clients, serverID *string, serverIP *string, serverName *string) error {
-	body := map[string]*string{
-		"serverID":   serverID,
-		"serverIP":   serverIP,
-		"serverName": serverName,
+	zone, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		return err
+	}
+
+	lastUpdated := time.Now().In(zone).Format(time.DateTime)
+	sk := "serverdetails"
+	isRunning := true
+
+	body := &Server{
+		ID:          serverID,
+		SK:          &sk,
+		IP:          serverIP,
+		Name:        serverName,
+		LastUpdated: &lastUpdated,
+		IsRunning:   &isRunning,
 	}
 
 	jbody, err := json.Marshal(body)

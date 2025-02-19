@@ -28,10 +28,11 @@ func NewHandler(c *C) *Handler {
 
 type Server struct {
 	ID          *string `json:"serverID" dynamodbav:"PK"`
+	SK          *string `json:"row" dynamodbav:"SK"`
 	IP          *string `json:"serverIP" dynamodbav:"ServerIP"`
 	Name        *string `json:"serverName" dynamodbav:"ServerName"`
-	LastUpdated *string `dynamodbav:"LastUpdated"`
-	IsRunning   *bool   `dynamodbav:"IsRunning"`
+	LastUpdated *string `json:"lastUpdated" dynamodbav:"LastUpdated"`
+	IsRunning   *bool   `json:"isRunning" dynamodbav:"IsRunning"`
 }
 
 func (ck *Server) unmarshallRequest(b io.ReadCloser) error {
@@ -58,6 +59,11 @@ func (h *Handler) RegisterServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if ck.SK == nil {
+		WriteResponse(w, http.StatusBadRequest, "serverID required for registering new server")
+		return
+	}
+
 	if ck.IP == nil {
 		WriteResponse(w, http.StatusBadRequest, "IP required for registering new server")
 	}
@@ -66,9 +72,12 @@ func (h *Handler) RegisterServer(w http.ResponseWriter, r *http.Request) {
 		WriteResponse(w, http.StatusBadRequest, "server name is required for registering new server")
 	}
 
-	zone, err := time.LoadLocation("America/New_York")
-	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, "failed to load timezone")
+	if ck.IsRunning == nil {
+		WriteResponse(w, http.StatusBadRequest, "server name is required for registering new server")
+	}
+
+	if ck.LastUpdated == nil {
+		WriteResponse(w, http.StatusBadRequest, "server name is required for registering new server")
 	}
 
 	// TODO: Abstract DB logic in DB specific controller
@@ -88,7 +97,10 @@ func (h *Handler) RegisterServer(w http.ResponseWriter, r *http.Request) {
 				Value: *ck.Name,
 			},
 			"LastUpdated": &types.AttributeValueMemberS{
-				Value: time.Now().In(zone).Format(time.DateTime),
+				Value: *ck.LastUpdated,
+			},
+			"IsRunning": &types.AttributeValueMemberBOOL{
+				Value: *ck.IsRunning,
 			},
 		},
 	})
