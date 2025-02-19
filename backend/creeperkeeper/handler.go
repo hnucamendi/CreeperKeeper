@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
@@ -106,17 +107,17 @@ func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Use Dynamodb marshaller to simplify this logic
-	var serverList = make([]map[string]string, len(out.Items))
-	for i := range out.Items {
-		serverList[i] = map[string]string{
-			"serverID":   out.Items[i]["PK"].(*types.AttributeValueMemberS).Value,
-			"serverIP":   out.Items[i]["ServerIP"].(*types.AttributeValueMemberS).Value,
-			"serverName": out.Items[i]["ServerName"].(*types.AttributeValueMemberS).Value,
-		}
+	var servers *[]Server
+	err = attributevalue.UnmarshalListOfMaps(out.Items, &servers)
+	if err != nil {
+		WriteResponse(w, http.StatusInternalServerError, "failed to unmarshal Dynamodb reqeust "+err.Error())
+		return
 	}
 
-	WriteResponse(w, http.StatusOK, serverList)
+	if err := json.NewEncoder(w).Encode(servers); err != nil {
+		WriteResponse(w, http.StatusInternalServerError, "failed to marshal response: "+err.Error())
+		return
+	}
 }
 
 func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
