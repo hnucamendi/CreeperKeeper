@@ -218,7 +218,7 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 				Value: lastUpdated,
 			},
 			"IsRunning": &types.AttributeValueMemberBOOL{
-				Value: *server.IsRunning,
+				Value: false,
 			},
 		},
 	})
