@@ -107,12 +107,14 @@ func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var servers *[]Server
+	var servers *Server
 	err = attributevalue.UnmarshalListOfMaps(out.Items, &servers)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, "failed to unmarshal Dynamodb reqeust "+err.Error())
 		return
 	}
+
+	fmt.Printf("TAMO GET %+v", servers)
 
 	if err := json.NewEncoder(w).Encode(servers); err != nil {
 		WriteResponse(w, http.StatusInternalServerError, "failed to marshal response: "+err.Error())
