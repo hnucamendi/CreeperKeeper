@@ -12,7 +12,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/aws/aws-sdk-go/service/ssm"
+	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	ssmTypes "github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	"github.com/hnucamendi/creeper-keeper/ckec2"
 )
 
@@ -232,6 +233,10 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	cmdInput := &ssm.SendCommandInput{
 		DocumentName: aws.String("AWS-RunShellScript"),
 		InstanceIds:  []string{*ck.ID},
+		CloudWatchOutputConfig: &ssmTypes.CloudWatchOutputConfig{
+			CloudWatchOutputEnabled: true,
+			CloudWatchLogGroupName:  aws.String("/aws/lambda/creeperkeeper"),
+		},
 		Parameters: map[string][]string{
 			"commands":         commands,
 			"workingDirectory": {"/home/ec2-user"},
