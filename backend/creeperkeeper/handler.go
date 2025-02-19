@@ -176,6 +176,9 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 			"PK": &types.AttributeValueMemberS{
 				Value: *ck.ID,
 			},
+			"SK": &types.AttributeValueMemberS{
+				Value: "serverdetails",
+			},
 		},
 	}
 	inputJ, _ := json.Marshal(input)
