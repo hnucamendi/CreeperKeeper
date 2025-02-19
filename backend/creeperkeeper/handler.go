@@ -243,7 +243,7 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 			"workingDirectory": {"/home/ec2-user"},
 		},
 	}
-	cmd, err := h.Client.sc.SendCommand(r.Context(), cmdInput)
+	_, err = h.Client.sc.SendCommand(r.Context(), cmdInput)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())
 		return
