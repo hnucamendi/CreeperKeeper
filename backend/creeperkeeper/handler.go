@@ -1,14 +1,18 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/hnucamendi/creeper-keeper/ckec2"
 )
 
@@ -165,6 +169,85 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	input := &dynamodb.GetItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]types.AttributeValue{
+			"PK": &types.AttributeValueMemberS{
+				Value: *ck.ID,
+			},
+		},
+	}
+	out, err := h.Client.db.GetItem(r.Context(), input)
+	if err != nil {
+		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	zone, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		WriteResponse(w, http.StatusInternalServerError, "failed to set timezone"+err.Error())
+		return
+	}
+	lastUpdated := time.Now().In(zone).Format(time.DateTime)
+
+	var server *Server
+	err = attributevalue.UnmarshalMap(out.Item, &server)
+	if err != nil {
+		WriteResponse(w, http.StatusInternalServerError, "failed to unmarshal Dynamodb reqeust "+err.Error())
+		return
+	}
+
+	_, err = h.Client.db.PutItem(r.Context(), &dynamodb.PutItemInput{
+		TableName: aws.String(tableName),
+		Item: map[string]types.AttributeValue{
+			"PK": &types.AttributeValueMemberS{
+				Value: *ck.ID,
+			},
+			"SK": &types.AttributeValueMemberS{
+				Value: "serverdetails",
+			},
+			"ServerIP": &types.AttributeValueMemberS{
+				Value: *server.IP,
+			},
+			"ServerName": &types.AttributeValueMemberS{
+				Value: *server.Name,
+			},
+			"LastUpdated": &types.AttributeValueMemberS{
+				Value: lastUpdated,
+			},
+			"IsRunning": &types.AttributeValueMemberBOOL{
+				Value: *server.IsRunning,
+			},
+		},
+	})
+	if err != nil {
+		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	commands := []string{
+		"sudo docker exec -i " + *server.Name + " rcon-cli", "stop",
+		"sudo aws s3 sync --delete data s3://creeperkeeper-world-data/" + *server.Name + "/",
+	}
+	cmdInput := &ssm.SendCommandInput{
+		DocumentName: aws.String("AWS-RunShellScript"),
+		InstanceIds:  []string{*ck.ID},
+		Parameters: map[string][]string{
+			"commands":         commands,
+			"workingDirectory": {"/home/ec2-user"},
+		},
+	}
+	cmd, err := h.Client.sc.SendCommand(r.Context(), cmdInput)
+	if err != nil {
+		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	err = getCommandDetails(r.Context(), h.Client.sc, ck.ID, cmd.Command.CommandId)
+	if err != nil {
+		fmt.Println("there was an error listing cmd status: not breaking execution ", err.Error())
+	}
+
 	err = ckec2.StopEC2Instance(r.Context(), h.Client.ec, ck.ID)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, err.Error())
@@ -172,6 +255,40 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteResponse(w, http.StatusOK, "Server stopping")
+}
+
+func getCommandDetails(ctx context.Context, ssmClient *ssm.Client, instanceID *string, commandID *string) error {
+	listCommandsInput := &ssm.ListCommandInvocationsInput{
+		InstanceId: instanceID,
+		Details:    true,
+		CommandId:  commandID,
+	}
+	invocation, err := ssmClient.ListCommandInvocations(ctx, listCommandsInput)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("commands executed: %+v\n", invocation.CommandInvocations)
+	meta, err := json.Marshal(invocation.ResultMetadata)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("commands executed metadata: %+v\n", meta)
+
+	invocationOutput, err := ssmClient.GetCommandInvocation(ctx, &ssm.GetCommandInvocationInput{
+		CommandId:  commandID,
+		InstanceId: instanceID,
+	})
+	if err != nil {
+		return fmt.Errorf("error getting command invocation: %w", err)
+	}
+
+	fmt.Printf("Command Status: %s\n", invocationOutput.Status)
+	fmt.Println("Standard Output:")
+	fmt.Println(invocationOutput.StandardOutputContent)
+	fmt.Println("Standard Error:")
+	fmt.Println(invocationOutput.StandardErrorContent)
+	return nil
 }
 
 func WriteResponse(w http.ResponseWriter, code int, message interface{}) {

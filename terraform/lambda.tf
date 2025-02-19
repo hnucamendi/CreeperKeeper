@@ -65,6 +65,7 @@ resource "aws_iam_role_policy" "main" {
           "ssm:GetParameters",
           "ssm:GetParameter",
           "ssm:SendCommand",
+          "ssm:ListCommandInvocations",
         ],
         Resource = [
           "*",

@@ -151,50 +151,6 @@ func handleRunningState(ctx context.Context, detail *Detail, clients *Clients) e
 }
 
 func handleStoppingState(ctx context.Context, detail *Detail, clients *Clients) error {
-	err := stopServer(ctx, clients, &detail.InstanceID, detail.ServerName)
-	if err != nil {
-		return err
-	}
-
-	err = deregisterServerDetails(clients, &detail.InstanceID, detail.ServerIP, detail.ServerName)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func getCommandDetails(ctx context.Context, ssmClient *ssm.Client, instanceID *string, commandID *string) error {
-	listCommandsInput := &ssm.ListCommandInvocationsInput{
-		InstanceId: instanceID,
-		Details:    true,
-		CommandId:  commandID,
-	}
-	invocation, err := ssmClient.ListCommandInvocations(ctx, listCommandsInput)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("commands executed: %+v\n", invocation.CommandInvocations)
-	meta, err := json.Marshal(invocation.ResultMetadata)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("commands executed metadata: %+v\n", meta)
-
-	invocationOutput, err := ssmClient.GetCommandInvocation(ctx, &ssm.GetCommandInvocationInput{
-		CommandId:  commandID,
-		InstanceId: instanceID,
-	})
-	if err != nil {
-		return fmt.Errorf("error getting command invocation: %w", err)
-	}
-
-	fmt.Printf("Command Status: %s\n", invocationOutput.Status)
-	fmt.Println("Standard Output:")
-	fmt.Println(invocationOutput.StandardOutputContent)
-	fmt.Println("Standard Error:")
-	fmt.Println(invocationOutput.StandardErrorContent)
 	return nil
 }
 
@@ -279,32 +235,6 @@ func startServer(ctx context.Context, clients *Clients, serverID *string, server
 	return nil
 }
 
-func stopServer(ctx context.Context, clients *Clients, serverID *string, serverName *string) error {
-	commands := []string{
-		"sudo docker exec -i " + *serverName + " rcon-cli", "stop",
-		"sudo aws s3 sync --delete data s3://creeperkeeper-world-data/" + *serverName + "/",
-	}
-	input := &ssm.SendCommandInput{
-		DocumentName: aws.String("AWS-RunShellScript"),
-		InstanceIds:  []string{*serverID},
-		Parameters: map[string][]string{
-			"commands":         commands,
-			"workingDirectory": {"/home/ec2-user"},
-		},
-	}
-	cmd, err := clients.ssmClient.SendCommand(ctx, input)
-	if err != nil {
-		return err
-	}
-
-	err = getCommandDetails(ctx, clients.ssmClient, serverID, cmd.Command.CommandId)
-	if err != nil {
-		fmt.Println("there was an error listing cmd status: not breaking execution ", err.Error())
-	}
-
-	return nil
-}
-
 func registerServerDetails(c *Clients, serverID *string, serverIP *string, serverName *string) error {
 	zone, err := time.LoadLocation("America/New_York")
 	if err != nil {
@@ -346,54 +276,6 @@ func registerServerDetails(c *Clients, serverID *string, serverIP *string, serve
 	if res.StatusCode != 200 {
 		return fmt.Errorf("failed to register server in DB %v", res.Status)
 	}
-
-	return nil
-}
-
-func deregisterServerDetails(c *Clients, serverID *string, serverIP *string, serverName *string) error {
-	zone, err := time.LoadLocation("America/New_York")
-	if err != nil {
-		return err
-	}
-
-	lastUpdated := time.Now().In(zone).Format(time.DateTime)
-	sk := "serverdetails"
-	isRunning := false
-
-	body := &Server{
-		ID:          serverID,
-		SK:          &sk,
-		IP:          serverIP,
-		Name:        serverName,
-		LastUpdated: &lastUpdated,
-		IsRunning:   &isRunning,
-	}
-
-	jbody, err := json.Marshal(body)
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequest("POST", baseURL+"/server/register", bytes.NewBuffer(jbody))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Add("Authorization", "Bearer "+c.jwtClient.AuthToken)
-
-	res, err := c.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-
-	defer res.Body.Close()
-
-	if res.StatusCode != 200 {
-		return fmt.Errorf("failed to register server in DB %v", res.Status)
-	}
-
-	resj, _ := json.Marshal(res.Body)
-	fmt.Println("response json", resj)
 
 	return nil
 }
