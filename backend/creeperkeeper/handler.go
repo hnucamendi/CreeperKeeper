@@ -31,6 +31,7 @@ type Server struct {
 	IP          *string `json:"serverIP" dynamodbav:"ServerIP"`
 	Name        *string `json:"serverName" dynamodbav:"ServerName"`
 	LastUpdated *string `dynamodbav:"LastUpdated"`
+	IsRunning   *bool   `dynamodbav:"IsRunning"`
 }
 
 func (ck *Server) unmarshallRequest(b io.ReadCloser) error {
@@ -108,15 +109,12 @@ func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("TAMO DYNAMO %+v", out.Items)
 	var servers *[]Server
 	err = attributevalue.UnmarshalListOfMaps(out.Items, &servers)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, "failed to unmarshal Dynamodb reqeust "+err.Error())
 		return
 	}
-
-	fmt.Printf("TAMO GET %+v", servers)
 
 	if err := json.NewEncoder(w).Encode(servers); err != nil {
 		WriteResponse(w, http.StatusInternalServerError, "failed to marshal response: "+err.Error())
