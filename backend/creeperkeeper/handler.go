@@ -107,7 +107,7 @@ func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var servers *Server
+	var servers *[]Server
 	err = attributevalue.UnmarshalListOfMaps(out.Items, &servers)
 	if err != nil {
 		WriteResponse(w, http.StatusInternalServerError, "failed to unmarshal Dynamodb reqeust "+err.Error())
