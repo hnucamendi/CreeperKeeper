@@ -22,7 +22,7 @@ const LIST_SERVERS_COMMAND = {
   description: "List CreeperKeeper Servers",
   options: [
     {
-      type: listAllServers.length,
+      type: 3,
       name: "server",
       required: true,
       choices: createCommandChoices(),
