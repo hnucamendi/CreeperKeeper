@@ -27,9 +27,10 @@ func NewHandler(c *C) *Handler {
 }
 
 type Server struct {
-	ID   *string `json:"serverID"`
-	IP   *string `json:"serverIP"`
-	Name *string `json:"serverName"`
+	ID          *string `json:"serverID" dynamodbav:"PK"`
+	IP          *string `json:"serverIP" dynamodbav:"ServerIP"`
+	Name        *string `json:"serverName" dynamodbav:"ServerName"`
+	LastUpdated *string `dynamodbav:"LastUpdated"`
 }
 
 func (ck *Server) unmarshallRequest(b io.ReadCloser) error {
@@ -107,6 +108,7 @@ func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Printf("TAMO DYNAMO %+v", out.Items)
 	var servers *[]Server
 	err = attributevalue.UnmarshalListOfMaps(out.Items, &servers)
 	if err != nil {
