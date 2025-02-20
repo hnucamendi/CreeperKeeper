@@ -259,9 +259,6 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 }
 
 func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS, POST")
-	w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
 	w.WriteHeader(code)
 
 	response := map[string]interface{}{"message": message}

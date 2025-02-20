@@ -19,7 +19,6 @@ resource "aws_apigatewayv2_api" "main" {
     allow_methods  = ["POST", "GET", "OPTIONS"]
     allow_origins  = ["http://localhost:5173", "https://${local.ck_host_name}", "https://${local.ck_web_host_name}"]
     allow_headers  = ["authorization", "content-type"]
-    expose_headers = ["authorization", "content-type"]
     max_age        = 3600
   }
 }
