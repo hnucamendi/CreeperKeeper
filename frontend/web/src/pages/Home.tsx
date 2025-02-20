@@ -47,6 +47,7 @@ export default function Home(): React.ReactNode {
         },
       };
 
+      console.log(token || "bad token");
       try {
         setLoading(true);
         const res = await fetch(url, body);
