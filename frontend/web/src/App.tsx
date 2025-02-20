@@ -1,19 +1,28 @@
+import React from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import PropTypes from "prop-types";
 import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Logout from "./component/Logout";
+import Login from "./components/Login";
+import Logout from "./components/Logout";
 
-export default function App() {
+function App(): React.ReactNode {
   const { isLoading, error, isAuthenticated } = useAuth0();
 
   if (error) {
-    return <div>Oops... {error.message}</div>;
+    return (
+      <div>
+        <h1>Oops... {error.message}</h1>
+      </div>
+    );
   }
 
   if (isLoading) {
-    return <p>Loading...</p>;
+    return (
+      <div>
+        <h1>Loading...</h1>
+      </div>
+    );
   }
 
   return (
@@ -22,15 +31,11 @@ export default function App() {
         <Route
           path="/"
           element={
-            isAuthenticated ? (
-              <Home />
-            ) : (
-              <Navigate replace to="/login" />
-            )
+            isAuthenticated ? <Home /> : <Navigate replace to="/login" />
           }
-        />
-        <Route path="/login" element={<Login />} />
-        <Route path="/logout" element={<Logout />} />
+        ></Route>
+        <Route path="/login" element={<Login />}></Route>
+        <Route path="/logout" element={<Logout />}></Route>
       </Routes>
     </BrowserRouter>
   );
@@ -39,3 +44,5 @@ export default function App() {
 App.propTypes = {
   children: PropTypes.node,
 };
+
+export default App;
