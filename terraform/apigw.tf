@@ -16,7 +16,7 @@ resource "aws_apigatewayv2_api" "main" {
   name          = var.ck_app_name
   protocol_type = "HTTP"
   cors_configuration {
-    allow_methods = ["POST", "GET"]
+    allow_methods = ["POST", "GET", "OPTIONS"]
     allow_origins = ["http://localhost:5173", "https://${local.ck_host_name}", "https://${local.ck_web_host_name}"]
     allow_headers = ["authorization", "access-control-allow-origin", "content-type"]
   }

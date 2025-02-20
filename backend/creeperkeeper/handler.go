@@ -260,6 +260,10 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 
 func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
 	w.WriteHeader(code)
+	w.Header().Add("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Add("Access-Control-Allow-Origin", "https://creeperkeeper.com")
+	w.Header().Add("Access-Control-Allow-Origin", "https://www.creeperkeeper.com")
+
 	response := map[string]interface{}{"message": message}
 	jMessage, err := json.Marshal(response)
 	if err != nil {
