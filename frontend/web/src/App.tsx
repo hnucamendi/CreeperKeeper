@@ -1,7 +1,6 @@
 import React from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
-import PropTypes from "prop-types";
 import Home from "./pages/Home";
 import Login from "./components/Login";
 import Logout from "./components/Logout";
@@ -40,9 +39,5 @@ function App(): React.ReactNode {
     </BrowserRouter>
   );
 }
-
-App.propTypes = {
-  children: PropTypes.node,
-};
 
 export default App;
