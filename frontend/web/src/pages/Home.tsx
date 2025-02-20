@@ -36,7 +36,7 @@ export default function Home(): React.ReactNode {
 
   useEffect(() => {
     const listServers = async () => {
-      const path = "/servers/list";
+      const path = "/server/list";
       const url = baseURL + path;
 
       const body = {
@@ -47,7 +47,6 @@ export default function Home(): React.ReactNode {
         },
       };
 
-      console.log(token || "bad token");
       try {
         setLoading(true);
         const res = await fetch(url, body);
