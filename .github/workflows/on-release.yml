@@ -9,8 +9,8 @@ jobs:
   deploy_react:
     uses: hnucamendi/shared-gha-workflows/.github/workflows/deploy-react.yml@master
     with:
-      working_directory: "./FE-CreeperKeeper"
+      working_directory: "frontend/web"
       s3_bucket: "creeperkeeper.com"
-      cloudfront_distribution_id: "EKI8FX9WU1KYO"
+      cloudfront_distribution_id: "E1XDUBS8JDTX1O "
       node_version: 20
     secrets: inherit
