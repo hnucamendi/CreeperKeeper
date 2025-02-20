@@ -9,15 +9,6 @@ resource "aws_acm_certificate" "main" {
   }
 }
 
-// resource "aws_acm_certificate" "cdn" {
-//   domain_name       = local.ck_cdn_host_name
-//   validation_method = "DNS"
-// 
-//   lifecycle {
-//     create_before_destroy = true
-//   }
-// }
-
 data "aws_route53_zone" "zone" {
   name         = local.ck_host_name
   private_zone = false
