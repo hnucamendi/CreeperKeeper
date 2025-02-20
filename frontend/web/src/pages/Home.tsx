@@ -1,7 +1,8 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import Logout from "../component/Logout";
+import Logout from "../components/Logout";
+import Login from "../components/Login";
 
 interface Server {
   ID: string;
@@ -64,6 +65,7 @@ export default function Home(): React.ReactNode {
   }, [token]);
 
   if (!isAuthenticated) {
+    <Login />;
     return <h1>✋ Please log in ✋</h1>;
   }
 
@@ -75,8 +77,10 @@ export default function Home(): React.ReactNode {
     );
   }
 
+  console.log(server);
   return (
     <main>
+      <Logout />
       <h1> 🌚 Welcome 🎃</h1>
     </main>
   );

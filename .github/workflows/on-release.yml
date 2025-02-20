@@ -11,6 +11,6 @@ jobs:
     with:
       working_directory: "frontend/web"
       s3_bucket: "creeperkeeper.com"
-      cloudfront_distribution_id: "E1XDUBS8JDTX1O "
+      cloudfront_distribution_id: "E1XDUBS8JDTX1O"
       node_version: 20
     secrets: inherit
