@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -49,34 +51,34 @@ func (h *Handler) RegisterServer(w http.ResponseWriter, r *http.Request) {
 	ck := &Server{}
 	err := ck.unmarshallRequest(r.Body)
 	if err != nil {
-		WriteResponse(w, http.StatusBadRequest, err.Error())
+		WriteResponse(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if ck.ID == nil {
-		WriteResponse(w, http.StatusBadRequest, "serverID required for registering new server")
+		WriteResponse(w, r, http.StatusBadRequest, "serverID required for registering new server")
 		return
 	}
 
 	if ck.SK == nil {
-		WriteResponse(w, http.StatusBadRequest, "serverID required for registering new server")
+		WriteResponse(w, r, http.StatusBadRequest, "serverID required for registering new server")
 		return
 	}
 
 	if ck.IP == nil {
-		WriteResponse(w, http.StatusBadRequest, "IP required for registering new server")
+		WriteResponse(w, r, http.StatusBadRequest, "IP required for registering new server")
 	}
 
 	if ck.Name == nil {
-		WriteResponse(w, http.StatusBadRequest, "server name is required for registering new server")
+		WriteResponse(w, r, http.StatusBadRequest, "server name is required for registering new server")
 	}
 
 	if ck.IsRunning == nil {
-		WriteResponse(w, http.StatusBadRequest, "server name is required for registering new server")
+		WriteResponse(w, r, http.StatusBadRequest, "server name is required for registering new server")
 	}
 
 	if ck.LastUpdated == nil {
-		WriteResponse(w, http.StatusBadRequest, "server name is required for registering new server")
+		WriteResponse(w, r, http.StatusBadRequest, "server name is required for registering new server")
 	}
 
 	// TODO: Abstract DB logic in DB specific controller
@@ -104,11 +106,11 @@ func (h *Handler) RegisterServer(w http.ResponseWriter, r *http.Request) {
 		},
 	})
 	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	WriteResponse(w, http.StatusOK, "server registered")
+	WriteResponse(w, r, http.StatusOK, "server registered")
 }
 
 func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
@@ -116,19 +118,19 @@ func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
 		TableName: aws.String(tableName),
 	})
 	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	var servers *[]Server
 	err = attributevalue.UnmarshalListOfMaps(out.Items, &servers)
 	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, "failed to unmarshal Dynamodb reqeust "+err.Error())
+		WriteResponse(w, r, http.StatusInternalServerError, "failed to unmarshal Dynamodb reqeust "+err.Error())
 		return
 	}
 
 	if err := json.NewEncoder(w).Encode(servers); err != nil {
-		WriteResponse(w, http.StatusInternalServerError, "failed to marshal response: "+err.Error())
+		WriteResponse(w, r, http.StatusInternalServerError, "failed to marshal response: "+err.Error())
 		return
 	}
 }
@@ -137,34 +139,34 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 	ck := &Server{}
 	err := ck.unmarshallRequest(r.Body)
 	if err != nil {
-		WriteResponse(w, http.StatusBadRequest, err.Error())
+		WriteResponse(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if ck.ID == nil {
-		WriteResponse(w, http.StatusBadRequest, "serverID must be provided")
+		WriteResponse(w, r, http.StatusBadRequest, "serverID must be provided")
 		return
 	}
 
 	err = ckec2.StartEC2Instance(r.Context(), h.Client.ec, ck.ID)
 	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	WriteResponse(w, http.StatusOK, "Server Started")
+	WriteResponse(w, r, http.StatusOK, "Server Started")
 }
 
 func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	ck := &Server{}
 	err := ck.unmarshallRequest(r.Body)
 	if err != nil {
-		WriteResponse(w, http.StatusBadRequest, err.Error())
+		WriteResponse(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if ck.ID == nil {
-		WriteResponse(w, http.StatusBadRequest, "serverID must be provided")
+		WriteResponse(w, r, http.StatusBadRequest, "serverID must be provided")
 		return
 	}
 
@@ -181,13 +183,13 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	}
 	out, err := h.Client.db.GetItem(r.Context(), input)
 	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	zone, err := time.LoadLocation("America/New_York")
 	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, "failed to set timezone"+err.Error())
+		WriteResponse(w, r, http.StatusInternalServerError, "failed to set timezone"+err.Error())
 		return
 	}
 	lastUpdated := time.Now().In(zone).Format(time.DateTime)
@@ -195,7 +197,7 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	var server *Server
 	err = attributevalue.UnmarshalMap(out.Item, &server)
 	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, "failed to unmarshal Dynamodb reqeust "+err.Error())
+		WriteResponse(w, r, http.StatusInternalServerError, "failed to unmarshal Dynamodb reqeust "+err.Error())
 		return
 	}
 
@@ -223,7 +225,7 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 		},
 	})
 	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -245,27 +247,35 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err = h.Client.sc.SendCommand(r.Context(), cmdInput)
 	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	err = ckec2.StopEC2Instance(r.Context(), h.Client.ec, ck.ID)
 	if err != nil {
-		WriteResponse(w, http.StatusInternalServerError, err.Error())
+		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	WriteResponse(w, http.StatusOK, "Server stopping")
+	WriteResponse(w, r, http.StatusOK, "Server stopping")
 }
 
-func WriteResponse(w http.ResponseWriter, code int, message interface{}) {
-	w.WriteHeader(code)
+func generateETag[T any](data T) string {
+	jsonData, _ := json.Marshal(data)
+	hash := sha256.Sum256(jsonData)
+	return `W/"` + hex.EncodeToString(hash[:]) + `"`
+}
 
-	response := map[string]interface{}{"message": message}
-	jMessage, err := json.Marshal(response)
-	if err != nil {
-		http.Error(w, `{"message": "Internal Server Error"}`, http.StatusInternalServerError)
+func WriteResponse[T any](w http.ResponseWriter, r *http.Request, code int, message T) {
+	etag := generateETag(message)
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("ETag", etag)
+
+	if match := r.Header.Get("If-None-Match"); match == etag {
+		w.WriteHeader(http.StatusNotModified)
 		return
 	}
-	w.Write(jMessage)
+
+	w.WriteHeader(code)
+	json.NewEncoder(w).Encode(message)
 }
