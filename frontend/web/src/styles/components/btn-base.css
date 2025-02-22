@@ -1,0 +1,14 @@
+.btn-base {
+  font-family: var(--main-font-family);
+  font-size: var(--25-px-rem);
+  text-align: center;
+  border-color: var(--main-stroke);
+  background-color: transparent;
+  /*1px */
+  border-width: 0.04em;
+  color: var(--main-white);
+  /*10px 30px*/
+  padding: 0.3em 0.84em;
+  cursor: pointer;
+  -webkit-text-stroke: 0.04em var(--main-stroke);
+}
