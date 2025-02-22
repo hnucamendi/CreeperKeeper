@@ -3,7 +3,7 @@
 }
 
 .landing-login::after {
-  content: url("../../assets/creature2.svg");
+  content: url("/assets/creature2.svg");
   position: absolute;
   top: 100%;
   left: 50%;
