@@ -1,68 +1,49 @@
+@import url("https://fonts.googleapis.com/css2?family=Lacquer&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Jersey+15&family=Lacquer&display=swap");
+
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  --main-stroke: #353535;
+  --secondary-stroke: #707070;
+  --page-background: #242424;
+  --server-details-background: #fff396;
+  --main-white: #ffffff;
+  --main-red: #ff4145;
+  --secondary-red: #ff5454;
+  --main-green: #44ff7e;
+  --main-purple: #523fff;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  --default-font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --primary-font-family: "Jersey 15", var(--default-font-family);
+  --secondary-font-family: "Lacquer", var(--default-font-family);
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+  --10-px-rem: 0.625rem;
+  --13-px-rem: 0.812rem;
+  --16-px-rem: 1rem;
+  --20-px-rem: 1.25rem;
+  --25-px-rem: 1.562rem;
+  --31-px-rem: 1.938rem;
+  --39-px-rem: 2.438rem;
+  --49-px-rem: 3.062rem;
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  --default-h1: var(--49-px-rem);
+  --default-h2: var(--39-px-rem);
 }
 
 h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  font-size: var(--default-h1);
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+h2 {
+  font-size: var(--default-h2);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--primary-font-family), sans-serif;
+  background-color: var(--page-background);
 }

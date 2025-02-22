@@ -2,8 +2,7 @@ import React from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import Home from "./pages/Home";
-import Login from "./components/Login";
-import Logout from "./components/Logout";
+import Login from "./pages/Login";
 
 function App(): React.ReactNode {
   const { isLoading, error, isAuthenticated } = useAuth0();
@@ -34,7 +33,6 @@ function App(): React.ReactNode {
           }
         ></Route>
         <Route path="/login" element={<Login />}></Route>
-        <Route path="/logout" element={<Logout />}></Route>
       </Routes>
     </BrowserRouter>
   );

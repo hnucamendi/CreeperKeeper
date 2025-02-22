@@ -1,0 +1,11 @@
+.landing-login {
+  background-color: transparent;
+}
+
+.landing-login::after {
+  content: url("creature2.svg");
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+}
