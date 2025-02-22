@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -276,6 +277,7 @@ func WriteResponse[T any](w http.ResponseWriter, r *http.Request, code int, mess
 		return
 	}
 
-	w.WriteHeader(code)
+	fmt.Printf("%+v", w)
+
 	json.NewEncoder(w).Encode(message)
 }
