@@ -130,10 +130,7 @@ func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(servers); err != nil {
-		WriteResponse(w, r, http.StatusInternalServerError, "failed to marshal response: "+err.Error())
-		return
-	}
+  WriteResponse(w, r, http.StatusOK, servers)
 }
 
 func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
