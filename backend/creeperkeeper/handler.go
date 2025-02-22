@@ -269,14 +269,10 @@ func WriteResponse[T any](w http.ResponseWriter, r *http.Request, code int, mess
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("ETag", etag)
 
-	fmt.Printf("TAMO RWH: %+v\n", w.Header())
-
 	if match := r.Header.Get("If-None-Match"); match == etag {
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
-
-	fmt.Printf("TAMO RW: %+v\n", w)
 
 	json.NewEncoder(w).Encode(message)
 }
