@@ -1,0 +1,30 @@
+body {
+  background-image: url("noiseTexture.png");
+}
+
+.landing-page-base {
+  text-align: center;
+  font-family: var(--secondary-font-family);
+  color: var(--main-white);
+}
+
+.landing-hero-container {
+  /*not super proud of this*/
+  display: flex;
+  flex-direction: column;
+  gap: 2.5em;
+}
+
+.btn-group .landing-login {
+  position: relative;
+}
+
+.btn-group .landing-signup {
+  position: relative;
+}
+
+.btn-group {
+  display: flex;
+  justify-content: center;
+  gap: 1.5625em;
+}

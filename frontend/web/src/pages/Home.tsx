@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import Logout from "../components/Logout";
-import Login from "../components/Login";
+import LogoutButton from "../components/LogoutButton";
+import LoginButton from "../components/LoginButton";
 import { HTMLFormMethod } from "react-router-dom";
+import "../styles/pages/home.css";
 
 interface Server {
   serverID: string;
@@ -159,7 +160,7 @@ export default function Home(): React.ReactNode {
   };
 
   if (!isAuthenticated) {
-    <Login />;
+    <LoginButton />;
     return <h1>✋ Please log in ✋</h1>;
   }
 
@@ -173,7 +174,7 @@ export default function Home(): React.ReactNode {
 
   return (
     <main>
-      <Logout />
+      <LogoutButton />
       <h1> 🌚 Welcome 🎃</h1>
       <button onClick={listServers}>trigger list servers</button>
       {servers.map((v: Server) => (

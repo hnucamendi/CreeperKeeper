@@ -1,0 +1,14 @@
+.landing-base-btn {
+  font-family: var(--main-font-family);
+  font-size: var(--25-px-rem);
+  text-align: center;
+  /*3px*/
+  border-radius: 0.12em;
+  border-color: var(--main-white);
+  /*1px */
+  border-width: 0.04em;
+  color: var(--main-white);
+  /*10px 30px*/
+  padding:  0.4em 1.2em;
+  cursor: pointer;
+}
