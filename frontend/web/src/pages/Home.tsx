@@ -19,12 +19,8 @@ export default function Home(): React.ReactNode {
   const [servers, setServers] = useState<Array<Server> | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [pageLoading, setPageLoading] = useState<boolean>(false);
-  const [startLoading, setStartLoading] = useState<boolean>(
-    Boolean(localStorage.getItem("startServer")),
-  );
-  const [stopLoading, setStopLoading] = useState<boolean>(
-    Boolean(localStorage.getItem("stopServer")),
-  );
+  const [startLoading, setStartLoading] = useState<boolean>(false);
+  const [stopLoading, setStopLoading] = useState<boolean>(false);
   const [serverStateChange, setServerStateChange] = useState<number>(0);
   const THREE_MINUTES: number = 60 * 3000;
   const ONE_MINUTE: number = 60 * 1000;
@@ -85,8 +81,7 @@ export default function Home(): React.ReactNode {
   };
 
   const startServer = async (serverID: string) => {
-    localStorage.setItem("startServer", "true");
-    setStartLoading(Boolean(localStorage.getItem("startServer")));
+    setStartLoading(true);
     const url = new URL(baseURL + "/server/start");
     const req = await buildRequest(
       url,
@@ -103,14 +98,12 @@ export default function Home(): React.ReactNode {
       throw new Error(`Failed to start server ${serverID} Error: ${error} `);
     } finally {
       setServerStateChange((prev) => prev + 1);
-      localStorage.removeItem("startServer");
       setStartLoading(false);
     }
   };
 
   const stopServer = async (serverID: string) => {
-    localStorage.setItem("stopServer", "true");
-    setStopLoading(Boolean(localStorage.getItem("stopServer")));
+    setStopLoading(true);
     const url = new URL(baseURL + "/server/stop");
     const req = await buildRequest(
       url,
@@ -128,7 +121,6 @@ export default function Home(): React.ReactNode {
       throw new Error(`Failed to stop server ${serverID} Error: ${error} `);
     } finally {
       setServerStateChange((prev) => prev + 1);
-      localStorage.removeItem("stopServer");
       setStopLoading(false);
     }
   };

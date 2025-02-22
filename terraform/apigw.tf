@@ -18,7 +18,8 @@ resource "aws_apigatewayv2_api" "main" {
   cors_configuration {
     allow_methods  = ["POST", "GET", "OPTIONS"]
     allow_origins  = ["http://localhost:5173", "https://${local.ck_host_name}", "https://${local.ck_web_host_name}"]
-    allow_headers  = ["authorization", "content-type"]
+    allow_headers  = ["authorization", "content-type", "if-none-match"]
+    expose_headers = ["etag"]
     max_age        = 3600
   }
 }
