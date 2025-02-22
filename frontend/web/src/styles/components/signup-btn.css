@@ -2,7 +2,7 @@
   background-color: var(--secondary-red);
 }
 .landing-signup::after {
-  content: url("/assets/creature1.svg");
+  content: url("assets/creature1.svg");
   position: absolute;
   top: 100%;
   left: 50%;
