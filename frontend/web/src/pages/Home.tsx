@@ -186,13 +186,13 @@ export default function Home(): React.ReactNode {
           <p>Status: {v.isRunning ? "RUNNING" : "STOPPED"}</p>
           <button
             onClick={() => startServer(v.serverID)}
-            disabled={startLoading || stopLoading}
+            disabled={v.isRunning || startLoading || stopLoading}
           >
             {startLoading ? "Starting..." : "Start"}
           </button>
           <button
             onClick={() => stopServer(v.serverID)}
-            disabled={startLoading || stopLoading}
+            disabled={!v.isRunning || startLoading || stopLoading}
           >
             {stopLoading ? "Stopping..." : "Stop"}
           </button>
