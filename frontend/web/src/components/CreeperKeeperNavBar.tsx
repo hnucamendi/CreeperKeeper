@@ -2,6 +2,7 @@ import React from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import LogoutButton from "./LogoutButton.tsx";
 import "../styles/components/creeperkeeper-nav-bar.css";
+import userIcon from "../assets/userIcon.svg";
 
 export default function CreeperKeeperNavBar(): React.ReactNode {
   const NavWrapper: React.FC<{ children: React.ReactNode }> = ({
@@ -16,7 +17,7 @@ export default function CreeperKeeperNavBar(): React.ReactNode {
           <h1>CreeperKeeper</h1>
           <div className="authenticated-nav-items">
             <LogoutButton />
-            <img src="./src/assets/userIcon.svg" />
+              <img src={userIcon} alt="User Icon" />
           </div>
         </div>
       </NavWrapper>
