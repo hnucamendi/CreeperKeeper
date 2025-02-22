@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -71,7 +72,9 @@ func init() {
 }
 
 func handler(context context.Context, event events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
-	return httpadapter.NewV2(mux).ProxyWithContext(context, event)
+	test, err := httpadapter.NewV2(mux).ProxyWithContext(context, event)
+	fmt.Printf("%+v", test)
+	return test, err
 }
 
 func main() {
