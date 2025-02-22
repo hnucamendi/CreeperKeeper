@@ -1,4 +1,21 @@
 .navbar {
+  margin: 0 auto;
   padding: 1.875em;
   font-family: var(--primary-font-family);
+  color: var(--main-white);
+}
+
+.navbar > .authenticated-nav-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  width: 100%;
+  gap: auto 0;
+}
+
+.navbar > .authenticated-nav-container > .authenticated-nav-items {
+  display: flex;
+  justify-content: center;
+  gap: 0.8125em;
 }

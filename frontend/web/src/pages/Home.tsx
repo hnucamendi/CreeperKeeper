@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import LogoutButton from "../components/LogoutButton";
 import LoginButton from "../components/LoginButton";
+import CreeperKeeperNavBar from "../components/CreeperKeeperNavBar";
+import ServerInstance from "../components/ServerInstance";
 import { HTMLFormMethod } from "react-router-dom";
 import "../styles/pages/home.css";
 
-interface Server {
+export interface Server {
   serverID: string;
   row: string;
   serverIP: string;
@@ -81,7 +82,7 @@ export default function Home(): React.ReactNode {
     }
   };
 
-  const startServer = async (serverID: string) => {
+  const startServer = async (serverID: string): Promise<void> => {
     setStartLoading(true);
     const url = new URL(baseURL + "/server/start");
     const req = await buildRequest(
@@ -174,31 +175,17 @@ export default function Home(): React.ReactNode {
 
   return (
     <main>
-      <LogoutButton />
-      <h1> 🌚 Welcome 🎃</h1>
-      <button onClick={listServers}>trigger list servers</button>
-      {servers.map((v: Server) => (
-        <div key={v.serverID}>
-          <span>{v.row}</span>
-          <span>Last updated: {v.lastUpdated}</span>
-          <h2>{v.serverName}</h2>
-          <p>{v.serverID}</p>
-          <p>{v.isRunning ? v.serverIP : `Last server IP: ${v.serverIP}`}</p>
-          <p>Status: {v.isRunning ? "RUNNING" : "STOPPED"}</p>
-          <button
-            onClick={() => startServer(v.serverID)}
-            disabled={v.isRunning || startLoading || stopLoading}
-          >
-            {startLoading ? "Starting..." : "Start"}
-          </button>
-          <button
-            onClick={() => stopServer(v.serverID)}
-            disabled={!v.isRunning || startLoading || stopLoading}
-          >
-            {stopLoading ? "Stopping..." : "Stop"}
-          </button>
-        </div>
-      ))}
+      <CreeperKeeperNavBar />
+      <div className="server-container">
+        <ServerInstance
+          serverList={servers}
+          startState={startLoading}
+          stopState={stopLoading}
+          startServer={startServer}
+          stopServer={stopServer}
+          listServers={listServers}
+        />
+      </div>
     </main>
   );
 }

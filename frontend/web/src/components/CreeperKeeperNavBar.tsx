@@ -12,8 +12,13 @@ export default function CreeperKeeperNavBar(): React.ReactNode {
   if (isAuthenticated) {
     return (
       <NavWrapper>
-        <LogoutButton />
-        <h1>CreeperKeeper</h1>
+        <div className="authenticated-nav-container">
+          <h1>CreeperKeeper</h1>
+          <div className="authenticated-nav-items">
+            <LogoutButton />
+            <img src="user-icon.svg" />
+          </div>
+        </div>
       </NavWrapper>
     );
   }
