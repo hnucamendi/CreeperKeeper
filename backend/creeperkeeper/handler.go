@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -130,7 +129,7 @@ func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-  WriteResponse(w, r, http.StatusOK, servers)
+	WriteResponse(w, r, http.StatusOK, servers)
 }
 
 func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
