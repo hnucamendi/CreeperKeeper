@@ -9,7 +9,7 @@ interface ServerInstanceProps {
   stopState: boolean;
   startServer: (serverID: string) => Promise<void>;
   stopServer: (serverID: string) => Promise<void>;
-  listServers: () => Promise<void>;
+  refreshServer: (serverID: string) => Promise<string>;
 }
 
 export default function ServerInstance({
@@ -18,7 +18,7 @@ export default function ServerInstance({
   stopState,
   startServer,
   stopServer,
-  listServers,
+  refreshServer,
 }: ServerInstanceProps): React.ReactNode {
   return (
     <>
@@ -26,7 +26,10 @@ export default function ServerInstance({
         <div key={v.serverID}>
           <div className="server-detail-container">
             <div className="server-btn-group">
-              <button className="btn-base" onClick={listServers}>
+              <button
+                className="btn-base"
+                onClick={() => refreshServer(v.serverID)}
+              >
                 Refresh
               </button>
               <button
@@ -50,7 +53,9 @@ export default function ServerInstance({
               <p>Server Name: {v.serverName}</p>
               <p>Server ID: {v.serverID}</p>
               <p>
-                {v.isRunning ? `Server IP: ${v.serverIP}` : `Last server IP: ${v.serverIP}`}
+                {v.isRunning
+                  ? `Server IP: ${v.serverIP}`
+                  : `Last server IP: ${v.serverIP}`}
               </p>
               <p>Status: {v.isRunning ? "RUNNING" : "STOPPED"}</p>
             </div>

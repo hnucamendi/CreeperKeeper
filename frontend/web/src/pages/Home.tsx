@@ -53,6 +53,23 @@ export default function Home(): React.ReactNode {
   const sleep = async (time: number): Promise<void> =>
     new Promise((resolve) => setTimeout(resolve, time));
 
+  const refreshServer = async (serverID: string): Promise<string> => {
+    const url = new URL(baseURL + `/server/ping/${serverID}`);
+    const req = await buildRequest(url, "GET");
+    try {
+      const res = await fetch(req);
+      if (!res.ok)
+        throw new Error(
+          `Error refreshing sever status; response: ${res.status}`,
+        );
+      console.log(res);
+      const resJson: string = await res.json();
+      return resJson;
+    } catch (error: unknown) {
+      console.error(error);
+    }
+  };
+
   const listServers = async (): Promise<void> => {
     setPageLoading(true);
     const url = new URL(baseURL + "/server/list");
@@ -73,7 +90,6 @@ export default function Home(): React.ReactNode {
 
       const newETag = res.headers.get("etag");
       if (newETag) localStorage.setItem("servers_etag", newETag);
-
       localStorage.setItem("servers", JSON.stringify(resJson));
     } catch (error: unknown) {
       console.error((error as Error).message);
@@ -183,7 +199,7 @@ export default function Home(): React.ReactNode {
           stopState={stopLoading}
           startServer={startServer}
           stopServer={stopServer}
-          listServers={listServers}
+          refreshServer={refreshServer}
         />
       </div>
     </main>
