@@ -20,6 +20,7 @@ export default function ServerInstance({
   stopServer,
   refreshServer,
 }: ServerInstanceProps): React.ReactNode {
+  let serverStatus: Promise<string> | null = null;
   return (
     <>
       {serverList.map((v: Server) => (
@@ -28,7 +29,7 @@ export default function ServerInstance({
             <div className="server-btn-group">
               <button
                 className="btn-base"
-                onClick={() => refreshServer(v.serverID)}
+                onClick={() => (serverStatus = refreshServer(v.serverID))}
               >
                 Refresh
               </button>
@@ -37,14 +38,14 @@ export default function ServerInstance({
                 onClick={() => startServer(v.serverID)}
                 disabled={v.isRunning || startState || stopState}
               >
-                {startState ? "Starting..." : "Start"}
+                {(serverStatus ?? startState) ? "Starting..." : "Start"}
               </button>
               <button
                 className="btn-base"
                 onClick={() => stopServer(v.serverID)}
                 disabled={!v.isRunning || startState || stopState}
               >
-                {stopState ? "Stopping..." : "Stop"}
+                {(serverStatus ?? stopState) ? "Stopping..." : "Stop"}
               </button>
             </div>
 
