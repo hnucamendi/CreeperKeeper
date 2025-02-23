@@ -57,6 +57,7 @@ func GetServerStatus(ctx context.Context, client *ec2.Client, serverID *string) 
 }
 
 func ec2StateToString(state EC2State) string {
+	fmt.Println(state)
 	switch state {
 	case 0:
 		return "PENDING"
