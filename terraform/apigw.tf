@@ -74,7 +74,7 @@ resource "aws_apigatewayv2_route" "list" {
 
 resource "aws_apigatewayv2_route" "ping" {
   api_id               = aws_apigatewayv2_api.main.id
-  route_key            = "GET /server/ping"
+  route_key            = "GET /server/ping/{serverID}"
   target               = "integrations/${aws_apigatewayv2_integration.main.id}"
   authorization_scopes = ["read:all"]
   authorizer_id        = aws_apigatewayv2_authorizer.main.id
