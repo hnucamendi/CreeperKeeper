@@ -47,6 +47,34 @@ func getInstanceIP(ctx context.Context, client *ec2.Client, serverID *string) (*
 	return ip, nil
 }
 
+func GetServerStatus(ctx context.Context, client *ec2.Client, serverID *string) (*string, error) {
+	state, err := getServerStatus(ctx, client, serverID)
+	if err != nil {
+		return nil, err
+	}
+	status := ec2StateToString(state)
+	return &status, nil
+}
+
+func ec2StateToString(state EC2State) string {
+	switch state {
+	case 0:
+		return "PENDING"
+	case 32:
+		return "SHUTTINGDOWN"
+	case 64:
+		return "STOPPING"
+	case 48:
+		return "TERMINATED"
+	case 16:
+		return "RUNNING"
+	case 80:
+		return "STOPPED"
+	default:
+		return "NOTFOUND"
+	}
+}
+
 // - 0 : pending
 // - 32 : shutting-down
 //
