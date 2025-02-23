@@ -20,12 +20,10 @@ export default function Home(): React.ReactNode {
   const baseURL = "https://api.creeperkeeper.com";
   const [servers, setServers] = useState<Array<Server> | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [pageLoading, setPageLoading] = useState<boolean>(false);
+  const [serverStatus, setServerStatus] = useState<string | null>(null);
   const [startLoading, setStartLoading] = useState<boolean>(false);
   const [stopLoading, setStopLoading] = useState<boolean>(false);
   const [serverStateChange, setServerStateChange] = useState<number>(0);
-  const THREE_MINUTES: number = 60 * 3000;
-  const ONE_MINUTE: number = 60 * 1000;
 
   useEffect(() => {
     const gat = async () => {
@@ -50,10 +48,7 @@ export default function Home(): React.ReactNode {
     }
   };
 
-  const sleep = async (time: number): Promise<void> =>
-    new Promise((resolve) => setTimeout(resolve, time));
-
-  const refreshServer = async (serverID: string): Promise<string> => {
+  const refreshServer = async (serverID: string): Promise<void> => {
     const url = new URL(baseURL + `/server/ping/${serverID}`);
     const req = await buildRequest(url, "GET");
     try {
@@ -62,16 +57,14 @@ export default function Home(): React.ReactNode {
         throw new Error(
           `Error refreshing sever status; response: ${res.status}`,
         );
-      console.log(res);
       const resJson: string = await res.json();
-      return resJson;
+      setServerStatus(resJson);
     } catch (error: unknown) {
       console.error(error);
     }
   };
 
   const listServers = async (): Promise<void> => {
-    setPageLoading(true);
     const url = new URL(baseURL + "/server/list");
     const storedETag = localStorage.getItem("servers_etag");
     const req = await buildRequest(url, "GET", storedETag);
@@ -93,8 +86,6 @@ export default function Home(): React.ReactNode {
       localStorage.setItem("servers", JSON.stringify(resJson));
     } catch (error: unknown) {
       console.error((error as Error).message);
-    } finally {
-      setPageLoading(false);
     }
   };
 
@@ -111,7 +102,6 @@ export default function Home(): React.ReactNode {
     );
     try {
       await fetch(req);
-      await sleep(THREE_MINUTES);
     } catch (error) {
       throw new Error(`Failed to start server ${serverID} Error: ${error} `);
     } finally {
@@ -134,7 +124,6 @@ export default function Home(): React.ReactNode {
 
     try {
       await fetch(req);
-      await sleep(ONE_MINUTE);
     } catch (error) {
       throw new Error(`Failed to stop server ${serverID} Error: ${error} `);
     } finally {
@@ -181,7 +170,7 @@ export default function Home(): React.ReactNode {
     return <h1>✋ Please log in ✋</h1>;
   }
 
-  if (pageLoading || servers === null) {
+  if (servers === null) {
     return (
       <main>
         <h1>Available servers are loading... 🐌</h1>
@@ -197,6 +186,7 @@ export default function Home(): React.ReactNode {
           serverList={servers}
           startState={startLoading}
           stopState={stopLoading}
+          serverStatus={serverStatus || ""}
           startServer={startServer}
           stopServer={stopServer}
           refreshServer={refreshServer}
