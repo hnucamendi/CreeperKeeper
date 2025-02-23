@@ -72,6 +72,15 @@ resource "aws_apigatewayv2_route" "list" {
   authorization_type   = "JWT"
 }
 
+resource "aws_apigatewayv2_route" "ping" {
+  api_id               = aws_apigatewayv2_api.main.id
+  route_key            = "GET /server/ping"
+  target               = "integrations/${aws_apigatewayv2_integration.main.id}"
+  authorization_scopes = ["read:all"]
+  authorizer_id        = aws_apigatewayv2_authorizer.main.id
+  authorization_type   = "JWT"
+}
+
 resource "aws_apigatewayv2_stage" "main" {
   api_id      = aws_apigatewayv2_api.main.id
   name        = var.ck_app_name

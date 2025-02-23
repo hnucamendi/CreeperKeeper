@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"time"
@@ -111,6 +112,19 @@ func (h *Handler) RegisterServer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteResponse(w, r, http.StatusOK, "server registered")
+}
+
+func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
+	serverID := r.PathValue("serverID")
+	if serverID == "" {
+		WriteResponse(w, r, http.StatusInternalServerError, errors.New("missing serverID: "+serverID))
+	}
+	status, err := ckec2.GetServerStatus(r.Context(), h.Client.ec, &serverID)
+	if err != nil {
+		WriteResponse(w, r, http.StatusInternalServerError, errors.New("failed to get sesrver status: "+err.Error()))
+	}
+
+	WriteResponse(w, r, http.StatusOK, status)
 }
 
 func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
