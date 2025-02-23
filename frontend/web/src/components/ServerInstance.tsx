@@ -7,20 +7,21 @@ interface ServerInstanceProps {
   serverList: Array<Server>;
   startState: boolean;
   stopState: boolean;
+  serverStatus: string;
   startServer: (serverID: string) => Promise<void>;
   stopServer: (serverID: string) => Promise<void>;
-  refreshServer: (serverID: string) => Promise<string>;
+  refreshServer: (serverID: string) => Promise<void>;
 }
 
 export default function ServerInstance({
   serverList,
   startState,
   stopState,
+  serverStatus,
   startServer,
   stopServer,
   refreshServer,
 }: ServerInstanceProps): React.ReactNode {
-  let serverStatus: Promise<string> | null = null;
   return (
     <>
       {serverList.map((v: Server) => (
@@ -29,23 +30,21 @@ export default function ServerInstance({
             <div className="server-btn-group">
               <button
                 className="btn-base"
-                onClick={() => (serverStatus = refreshServer(v.serverID))}
+                onClick={() => refreshServer(v.serverID)}
               >
                 Refresh
               </button>
               <button
                 className="btn-base"
                 onClick={() => startServer(v.serverID)}
-                disabled={v.isRunning || startState || stopState}
               >
-                {(serverStatus ?? startState) ? "Starting..." : "Start"}
+                {startState ? "Starting..." : "Start"}
               </button>
               <button
                 className="btn-base"
                 onClick={() => stopServer(v.serverID)}
-                disabled={!v.isRunning || startState || stopState}
               >
-                {(serverStatus ?? stopState) ? "Stopping..." : "Stop"}
+                {stopState ? "Stopping..." : "Stop"}
               </button>
             </div>
 
@@ -58,7 +57,14 @@ export default function ServerInstance({
                   ? `Server IP: ${v.serverIP}`
                   : `Last server IP: ${v.serverIP}`}
               </p>
-              <p>Status: {v.isRunning ? "RUNNING" : "STOPPED"}</p>
+              <p>
+                Status:{" "}
+                {serverStatus
+                  ? serverStatus
+                  : v.isRunning
+                    ? "RUNNING"
+                    : "STOPPED"}
+              </p>
             </div>
           </div>
         </div>
