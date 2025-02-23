@@ -48,6 +48,7 @@ func getInstanceIP(ctx context.Context, client *ec2.Client, serverID *string) (*
 }
 
 func GetServerStatus(ctx context.Context, client *ec2.Client, serverID *string) (*string, error) {
+	fmt.Println(serverID)
 	state, err := getServerStatus(ctx, client, serverID)
 	if err != nil {
 		return nil, err
