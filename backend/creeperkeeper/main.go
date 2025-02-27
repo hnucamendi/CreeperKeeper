@@ -9,10 +9,10 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
+	"github.com/hnucamendi/creeper-keeper/db"
 	"github.com/hnucamendi/jwt-go/jwt"
 	"golang.org/x/exp/rand"
 )
@@ -22,16 +22,16 @@ const (
 )
 
 var (
-	mux *http.ServeMux
-	sc  *ssm.Client
-	db  *dynamodb.Client
-	j   *jwt.JWT
-	ec  *ec2.Client
+	mux      *http.ServeMux
+	sc       *ssm.Client
+	dbClient *db.Client
+	j        *jwt.JWT
+	ec       *ec2.Client
 )
 
 type C struct {
 	sc *ssm.Client
-	db *dynamodb.Client
+	db *db.Client
 	j  *jwt.JWT
 	ec *ec2.Client
 	*http.Client
@@ -48,8 +48,11 @@ func init() {
 	}
 
 	sc = ssm.NewFromConfig(awscfg)
-	db = dynamodb.NewFromConfig(awscfg)
 	ec = ec2.NewFromConfig(awscfg)
+	dbClient = db.NewDatabase(
+		db.WithClient(db.DYNAMODB),
+		db.WithTable(tableName),
+	)
 
 	j = &jwt.JWT{
 		TenantURL: "https://dev-bxn245l6be2yzhil.us.auth0.com/oauth/token",
@@ -59,7 +62,7 @@ func init() {
 
 	c := &C{
 		sc:     sc,
-		db:     db,
+		db:     dbClient,
 		j:      j,
 		ec:     ec,
 		Client: hc,

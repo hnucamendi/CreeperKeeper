@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"time"
 
@@ -16,6 +15,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	ssmTypes "github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	"github.com/hnucamendi/creeper-keeper/ckec2"
+	cktypes "github.com/hnucamendi/creeper-keeper/types"
+	"github.com/hnucamendi/creeper-keeper/utils"
 )
 
 type Handler struct {
@@ -28,29 +29,11 @@ func NewHandler(c *C) *Handler {
 	}
 }
 
-type Server struct {
-	ID          *string `json:"serverID" dynamodbav:"PK"`
-	SK          *string `json:"row" dynamodbav:"SK"`
-	IP          *string `json:"serverIP" dynamodbav:"ServerIP"`
-	Name        *string `json:"serverName" dynamodbav:"ServerName"`
-	LastUpdated *string `json:"lastUpdated" dynamodbav:"LastUpdated"`
-	IsRunning   *bool   `json:"isRunning" dynamodbav:"IsRunning"`
-}
-
-func (ck *Server) unmarshallRequest(b io.ReadCloser) error {
-	err := json.NewDecoder(b).Decode(&ck)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // Adds EC2 instance details to DynamoDB to be used by EC2 Directly
 // TODO: take measures to ensure this cannot be invoked from FE
 func (h *Handler) RegisterServer(w http.ResponseWriter, r *http.Request) {
-	ck := &Server{}
-	err := ck.unmarshallRequest(r.Body)
+	ck := &cktypes.Server{}
+	err := ck.UnmarshallRequest(r.Body)
 	if err != nil {
 		WriteResponse(w, r, http.StatusBadRequest, err.Error())
 		return
@@ -82,34 +65,7 @@ func (h *Handler) RegisterServer(w http.ResponseWriter, r *http.Request) {
 		WriteResponse(w, r, http.StatusBadRequest, "server name is required for registering new server")
 	}
 
-	// TODO: Abstract DB logic in DB specific controller
-	_, err = h.Client.db.PutItem(r.Context(), &dynamodb.PutItemInput{
-		TableName: aws.String(tableName),
-		Item: map[string]types.AttributeValue{
-			"PK": &types.AttributeValueMemberS{
-				Value: *ck.ID,
-			},
-			"SK": &types.AttributeValueMemberS{
-				Value: "serverdetails",
-			},
-			"ServerIP": &types.AttributeValueMemberS{
-				Value: *ck.IP,
-			},
-			"ServerName": &types.AttributeValueMemberS{
-				Value: *ck.Name,
-			},
-			"LastUpdated": &types.AttributeValueMemberS{
-				Value: *ck.LastUpdated,
-			},
-			"IsRunning": &types.AttributeValueMemberBOOL{
-				Value: *ck.IsRunning,
-			},
-		},
-	})
-	if err != nil {
-		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
-		return
-	}
+	dbClient.Client.RegisterServer(r.Context(), tableName, utils.ToString(ck.ID), utils.ToString(ck.SK), utils.ToString(ck.IP), utils.ToString(ck.Name), utils.ToBool(ck.IsRunning), utils.ToString(ck.LastUpdated))
 
 	WriteResponse(w, r, http.StatusOK, "server registered")
 }
@@ -128,27 +84,17 @@ func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
-	out, err := h.Client.db.Scan(r.Context(), &dynamodb.ScanInput{
-		TableName: aws.String(tableName),
-	})
+	servers, err := dbClient.Client.ListServers(r.Context(), tableName)
 	if err != nil {
-		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	var servers *[]Server
-	err = attributevalue.UnmarshalListOfMaps(out.Items, &servers)
-	if err != nil {
-		WriteResponse(w, r, http.StatusInternalServerError, "failed to unmarshal Dynamodb reqeust "+err.Error())
-		return
+		WriteResponse(w, r, http.StatusInternalServerError, servers)
 	}
 
 	WriteResponse(w, r, http.StatusOK, servers)
 }
 
 func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
-	ck := &Server{}
-	err := ck.unmarshallRequest(r.Body)
+	ck := &cktypes.Server{}
+	err := ck.UnmarshallRequest(r.Body)
 	if err != nil {
 		WriteResponse(w, r, http.StatusBadRequest, err.Error())
 		return
@@ -169,8 +115,8 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
-	ck := &Server{}
-	err := ck.unmarshallRequest(r.Body)
+	ck := &cktypes.Server{}
+	err := ck.UnmarshallRequest(r.Body)
 	if err != nil {
 		WriteResponse(w, r, http.StatusBadRequest, err.Error())
 		return
@@ -181,23 +127,6 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	input := &dynamodb.GetItemInput{
-		TableName: aws.String(tableName),
-		Key: map[string]types.AttributeValue{
-			"PK": &types.AttributeValueMemberS{
-				Value: *ck.ID,
-			},
-			"SK": &types.AttributeValueMemberS{
-				Value: "serverdetails",
-			},
-		},
-	}
-	out, err := h.Client.db.GetItem(r.Context(), input)
-	if err != nil {
-		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
-		return
-	}
-
 	zone, err := time.LoadLocation("America/New_York")
 	if err != nil {
 		WriteResponse(w, r, http.StatusInternalServerError, "failed to set timezone"+err.Error())
@@ -205,7 +134,7 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	}
 	lastUpdated := time.Now().In(zone).Format(time.DateTime)
 
-	var server *Server
+	var server *cktypes.Server
 	err = attributevalue.UnmarshalMap(out.Item, &server)
 	if err != nil {
 		WriteResponse(w, r, http.StatusInternalServerError, "failed to unmarshal Dynamodb reqeust "+err.Error())
