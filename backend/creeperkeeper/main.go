@@ -8,11 +8,10 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/aws/aws-sdk-go-v2/service/ec2"
-	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
+	"github.com/hnucamendi/creeper-keeper/service/compute"
+	"github.com/hnucamendi/creeper-keeper/service/database"
+	"github.com/hnucamendi/creeper-keeper/service/systemsmanager"
 	"github.com/hnucamendi/jwt-go/jwt"
 	"golang.org/x/exp/rand"
 )
@@ -22,18 +21,18 @@ const (
 )
 
 var (
-	mux *http.ServeMux
-	sc  *ssm.Client
-	db  *dynamodb.Client
-	j   *jwt.JWT
-	ec  *ec2.Client
+	dbClient             *database.Client
+	computeClient        *compute.Client
+	systemsmanagerClient *systemsmanager.Client
+	mux                  *http.ServeMux
+	j                    *jwt.JWT
 )
 
 type C struct {
-	sc *ssm.Client
-	db *dynamodb.Client
-	j  *jwt.JWT
-	ec *ec2.Client
+	db                   *database.Client
+	compute              *compute.Client
+	systemsmanagerClient *systemsmanager.Client
+	j                    *jwt.JWT
 	*http.Client
 }
 
@@ -42,14 +41,12 @@ func init() {
 	mux = http.NewServeMux()
 	rand.Seed(uint64(time.Now().UnixNano()))
 
-	awscfg, err := config.LoadDefaultConfig(context.TODO())
-	if err != nil {
-		panic("unable to load sdk config" + err.Error())
-	}
-
-	sc = ssm.NewFromConfig(awscfg)
-	db = dynamodb.NewFromConfig(awscfg)
-	ec = ec2.NewFromConfig(awscfg)
+	systemsmanagerClient = systemsmanager.NewSystemsManager()
+	computeClient = compute.NewCompute()
+	dbClient = database.NewDatabase(
+		database.WithClient(database.DYNAMODB),
+		database.WithTable(tableName),
+	)
 
 	j = &jwt.JWT{
 		TenantURL: "https://dev-bxn245l6be2yzhil.us.auth0.com/oauth/token",
@@ -58,11 +55,11 @@ func init() {
 	hc := &http.Client{}
 
 	c := &C{
-		sc:     sc,
-		db:     db,
-		j:      j,
-		ec:     ec,
-		Client: hc,
+		db:                   dbClient,
+		compute:              computeClient,
+		systemsmanagerClient: systemsmanagerClient,
+		j:                    j,
+		Client:               hc,
 	}
 
 	h := NewHandler(c)

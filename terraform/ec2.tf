@@ -2,11 +2,11 @@ module "vanilla" {
   source  = "hnucamendi/minecraft-server-module/aws"
   version = "1.0.5"
 
-  vpc_id               = var.vpc_id
-  app_name             = var.ck_app_name
-  instance_type        = "t3.small"
-  minecraft_ops_list   = "Oldjimmy_"
-  minecraft_memory_G   = 1
+  vpc_id             = var.vpc_id
+  app_name           = var.ck_app_name
+  instance_type      = "t3.small"
+  minecraft_ops_list = "Oldjimmy_"
+  minecraft_memory_G = 1
 
   security_group_ingress_rules = {
     "allow-all-mc" = {
@@ -29,19 +29,19 @@ module "vanilla" {
 resource "aws_iam_policy" "s3_policy" {
   name        = "${var.ck_app_name}-s3-policy"
   description = "Policy granting S3 permissions for the Minecraft server instance"
-  policy      = jsonencode({
-    Version   = "2012-10-17",
+  policy = jsonencode({
+    Version = "2012-10-17",
     Statement = [
       {
         Sid      = "AllowListBucket",
         Effect   = "Allow",
-        Action   = [ "s3:ListBucket" ],
+        Action   = ["s3:ListBucket"],
         Resource = "arn:aws:s3:::creeperkeeper-world-data"
       },
       {
-        Sid      = "AllowBucketObjectActions",
-        Effect   = "Allow",
-        Action   = [
+        Sid    = "AllowBucketObjectActions",
+        Effect = "Allow",
+        Action = [
           "s3:GetObject",
           "s3:PutObject",
           "s3:DeleteObject"
@@ -57,13 +57,13 @@ resource "aws_iam_role_policy_attachment" "s3_policy_attachment" {
   policy_arn = aws_iam_policy.s3_policy.arn
 }
 
-// Direwolf modpack
+## Direwolf modpack ##
 // module "ftb_server" {
 //   source  = "hnucamendi/minecraft-server-module/aws"
-//   version = "0.0.7"
+//   version = "1.0.5"
 // 
 //   vpc_id                              = var.vpc_id
-//   app_name                            = var.ck_app_name
+//   app_name                            = "${var.ck_app_name}-ftb"
 //   instance_type                       = "r6i.large"
 //   minecraft_max_players               = 10
 //   minecraft_motd                      = "RedCraft"
