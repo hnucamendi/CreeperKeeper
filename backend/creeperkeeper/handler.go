@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	ssmTypes "github.com/aws/aws-sdk-go-v2/service/ssm/types"
-	"github.com/hnucamendi/creeper-keeper/ckec2"
 	cktypes "github.com/hnucamendi/creeper-keeper/types"
 	"github.com/hnucamendi/creeper-keeper/utils"
 )
@@ -71,7 +70,7 @@ func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
 	if serverID == "" {
 		WriteResponse(w, r, http.StatusInternalServerError, errors.New("missing serverID: "+serverID))
 	}
-	status, err := ckec2.GetServerStatus(r.Context(), h.Client.ec, &serverID)
+	status, err := h.Client.compute.Client.GetServerStatus(r.Context(), serverID)
 	if err != nil {
 		WriteResponse(w, r, http.StatusInternalServerError, errors.New("failed to get sesrver status: "+err.Error()))
 	}
@@ -101,7 +100,7 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = ckec2.StartEC2Instance(r.Context(), h.Client.ec, ck.ID)
+	err = h.Client.compute.Client.StartServer(r.Context(), utils.ToString(ck.ID))
 	if err != nil {
 		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
 		return
@@ -128,7 +127,7 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
 	}
 
-	ok, err := h.Client.db.Client.UpsertServer(r.Context(), h.Client.db.Table, ck.ID, ck.IP, ck.Name)
+	ok, err := h.Client.db.Client.UpsertServer(r.Context(), utils.ToString(h.Client.db.Table), utils.ToString(ck.ID), utils.ToString(ck.IP), utils.ToString(ck.Name))
 	if err != nil {
 		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
 	}
@@ -159,7 +158,7 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = ckec2.StopEC2Instance(r.Context(), h.Client.ec, ck.ID)
+	// err = ec2.Client.computeClient.StopServer(r.Context(), ck.ID)
 	if err != nil {
 		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
 		return

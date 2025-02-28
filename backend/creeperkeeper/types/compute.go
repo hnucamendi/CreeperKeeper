@@ -1,0 +1,13 @@
+package types
+
+type EC2State int
+
+const (
+	PENDING EC2State = iota
+	SHUTTINGDOWN
+	STOPPING
+	TERMINATED
+	RUNNING
+	STOPPED
+	NOTFOUND
+)

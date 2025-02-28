@@ -9,9 +9,9 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
+	"github.com/hnucamendi/creeper-keeper/service/compute"
 	"github.com/hnucamendi/creeper-keeper/service/database"
 	"github.com/hnucamendi/jwt-go/jwt"
 	"golang.org/x/exp/rand"
@@ -22,18 +22,18 @@ const (
 )
 
 var (
-	mux      *http.ServeMux
-	sc       *ssm.Client
-	dbClient *database.Client
-	j        *jwt.JWT
-	ec       *ec2.Client
+	mux           *http.ServeMux
+	sc            *ssm.Client
+	dbClient      *database.Client
+	j             *jwt.JWT
+	computeClient *compute.Client
 )
 
 type C struct {
-	sc *ssm.Client
-	db *database.Client
-	j  *jwt.JWT
-	ec *ec2.Client
+	sc      *ssm.Client
+	j       *jwt.JWT
+	db      *database.Client
+	compute *compute.Client
 	*http.Client
 }
 
@@ -48,7 +48,7 @@ func init() {
 	}
 
 	sc = ssm.NewFromConfig(awscfg)
-	ec = ec2.NewFromConfig(awscfg)
+	computeClient = compute.NewCompute()
 	dbClient = database.NewDatabase(
 		database.WithClient(database.DYNAMODB),
 		database.WithTable(tableName),
@@ -61,11 +61,11 @@ func init() {
 	hc := &http.Client{}
 
 	c := &C{
-		sc:     sc,
-		db:     dbClient,
-		j:      j,
-		ec:     ec,
-		Client: hc,
+		db:      dbClient,
+		compute: computeClient,
+		sc:      sc,
+		j:       j,
+		Client:  hc,
 	}
 
 	h := NewHandler(c)
