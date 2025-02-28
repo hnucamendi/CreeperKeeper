@@ -32,27 +32,27 @@ func (h *Handler) RegisterServer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if ck.ID == nil {
-		WriteResponse(w, r, http.StatusBadRequest, errors.New("server id required for registering new server"))
+		WriteResponse(w, r, http.StatusBadRequest, errors.New("server id required for registering new server").Error())
 		return
 	}
 
 	if ck.IP == nil {
-		WriteResponse(w, r, http.StatusBadRequest, errors.New("server ip required for registering new server"))
+		WriteResponse(w, r, http.StatusBadRequest, errors.New("server ip required for registering new server").Error())
 		return
 	}
 
 	if ck.Name == nil {
-		WriteResponse(w, r, http.StatusBadRequest, errors.New("server name is required for registering new server"))
+		WriteResponse(w, r, http.StatusBadRequest, errors.New("server name is required for registering new server").Error())
 		return
 	}
 
 	if ck.IsRunning == nil {
-		WriteResponse(w, r, http.StatusBadRequest, errors.New("server running status is required for registering new server"))
+		WriteResponse(w, r, http.StatusBadRequest, errors.New("server running status is required for registering new server").Error())
 		return
 	}
 
 	if ck.LastUpdated == nil {
-		WriteResponse(w, r, http.StatusBadRequest, errors.New("server last updated date is required for registering new server"))
+		WriteResponse(w, r, http.StatusBadRequest, errors.New("server last updated date is required for registering new server").Error())
 		return
 	}
 
@@ -152,6 +152,7 @@ func WriteResponse[T any](w http.ResponseWriter, r *http.Request, code int, mess
 	etag := generateETag(message)
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("ETag", etag)
+	w.WriteHeader(code)
 
 	if match := r.Header.Get("If-None-Match"); match == etag {
 		w.WriteHeader(http.StatusNotModified)
