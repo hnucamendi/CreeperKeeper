@@ -126,28 +126,6 @@ func ec2StateToString(state types.EC2State) string {
 	}
 }
 
-func getInstanceIP(ctx context.Context, client *ec2.Client, serverID *string) (*string, error) {
-	input := &ec2.DescribeInstancesInput{
-		InstanceIds: []string{*serverID},
-	}
-
-	out, err := client.DescribeInstances(ctx, input)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(out.Reservations) == 0 || len(out.Reservations[0].Instances) == 0 {
-		return nil, fmt.Errorf("instance not found")
-	}
-
-	ip := out.Reservations[0].Instances[0].PublicIpAddress
-	if ip == nil {
-		return nil, fmt.Errorf("instance does not have a public IP address")
-	}
-
-	return ip, nil
-}
-
 func NewCompute() (*Client, error) {
 	cfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {

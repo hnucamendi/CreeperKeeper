@@ -24,7 +24,6 @@ type Client struct {
 }
 
 func (db *Client) RegisterServer(ctx context.Context, tableName string, serverID string, serverType string, serverIP string, serverName string, serverIsRunning bool, serverLastUpdated string) (bool, error) {
-	// TODO: Abstract DB logic in DB specific controller
 	_, err := db.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName: aws.String(tableName),
 		Item: map[string]types.AttributeValue{

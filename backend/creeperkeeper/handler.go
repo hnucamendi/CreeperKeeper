@@ -7,10 +7,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/ssm"
-	ssmTypes "github.com/aws/aws-sdk-go-v2/service/ssm/types"
-	cktypes "github.com/hnucamendi/creeper-keeper/types"
+	"github.com/hnucamendi/creeper-keeper/types"
 	"github.com/hnucamendi/creeper-keeper/utils"
 )
 
@@ -27,7 +24,7 @@ func NewHandler(c *C) *Handler {
 // Adds EC2 instance details to DynamoDB to be used by EC2 Directly
 // TODO: take measures to ensure this cannot be invoked from FE
 func (h *Handler) RegisterServer(w http.ResponseWriter, r *http.Request) {
-	ck := &cktypes.Server{}
+	ck := &types.Server{}
 	err := ck.UnmarshallRequest(r.Body)
 	if err != nil {
 		WriteResponse(w, r, http.StatusBadRequest, err.Error())
@@ -88,7 +85,7 @@ func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
-	ck := &cktypes.Server{}
+	ck := &types.Server{}
 	err := ck.UnmarshallRequest(r.Body)
 	if err != nil {
 		WriteResponse(w, r, http.StatusBadRequest, err.Error())
@@ -110,7 +107,7 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
-	ck := &cktypes.Server{}
+	ck := &types.Server{}
 	err := ck.UnmarshallRequest(r.Body)
 	if err != nil {
 		WriteResponse(w, r, http.StatusBadRequest, err.Error())
@@ -136,29 +133,12 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 		WriteResponse(w, r, http.StatusInternalServerError, errors.Join(errors.New("upsert server failed")))
 	}
 
-	commands := []string{
-		"sudo docker exec -i " + *server.Name + " rcon-cli", "stop",
-		"sudo aws s3 sync --delete data s3://creeperkeeper-world-data/" + *server.Name + "/",
-	}
-	cmdInput := &ssm.SendCommandInput{
-		DocumentName: aws.String("AWS-RunShellScript"),
-		InstanceIds:  []string{*ck.ID},
-		CloudWatchOutputConfig: &ssmTypes.CloudWatchOutputConfig{
-			CloudWatchOutputEnabled: true,
-			CloudWatchLogGroupName:  aws.String("/aws/lambda/creeperkeeper"),
-		},
-		Parameters: map[string][]string{
-			"commands":         commands,
-			"workingDirectory": {"/home/ec2-user"},
-		},
-	}
-	_, err = h.Client.sc.SendCommand(r.Context(), cmdInput)
+	err = h.Client.systemsmanagerClient.Client.Send(r.Context(), utils.ToString(server.ID), utils.ToString(server.Name))
 	if err != nil {
 		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
-		return
 	}
 
-	// err = ec2.Client.computeClient.StopServer(r.Context(), ck.ID)
+	err = h.Client.compute.Client.StopServer(r.Context(), utils.ToString(ck.ID))
 	if err != nil {
 		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
 		return

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/hnucamendi/creeper-keeper/service/database/dynamo"
-	cktypes "github.com/hnucamendi/creeper-keeper/types"
+	"github.com/hnucamendi/creeper-keeper/types"
 	"github.com/hnucamendi/creeper-keeper/utils"
 )
 
@@ -16,8 +16,8 @@ const (
 
 type Database interface {
 	RegisterServer(ctx context.Context, tableName string, serverID string, serverType string, serverIP string, serverName string, serverIsRunning bool, serverLastUpdated string) (bool, error)
-	ListServers(ctx context.Context, tableName string) ([]cktypes.Server, error)
-	ListServer(ctx context.Context, tableName string, serverID string) (*cktypes.Server, error)
+	ListServers(ctx context.Context, tableName string) ([]types.Server, error)
+	ListServer(ctx context.Context, tableName string, serverID string) (*types.Server, error)
 	UpsertServer(ctx context.Context, tableName string, serverID string, serverIP string, serverName string) (bool, error)
 }
 
@@ -64,9 +64,9 @@ func WithClient(db DBClient) Opts {
 }
 
 func NewDatabase(fn ...Opts) *Client {
-	client := &Client{}
+	c := &Client{}
 	for _, f := range fn {
-		f(client)
+		f(c)
 	}
-	return client
+	return c
 }

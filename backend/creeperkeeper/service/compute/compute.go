@@ -17,12 +17,12 @@ type Client struct {
 }
 
 func NewCompute() *Client {
-	client := &Client{}
+	c := &Client{}
 	comp, err := ec2.NewCompute()
 	if err != nil {
-		client.Client = nil
+		c.Client = nil
 	}
-	client.Client = comp
+	c.Client = comp
 
-	return client
+	return c
 }
