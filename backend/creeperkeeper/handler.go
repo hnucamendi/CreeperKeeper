@@ -32,29 +32,28 @@ func (h *Handler) RegisterServer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if ck.ID == nil {
-		WriteResponse(w, r, http.StatusBadRequest, "serverID required for registering new server")
-		return
-	}
-
-	if ck.SK == nil {
-		WriteResponse(w, r, http.StatusBadRequest, "serverID required for registering new server")
+		WriteResponse(w, r, http.StatusBadRequest, errors.New("server id required for registering new server"))
 		return
 	}
 
 	if ck.IP == nil {
-		WriteResponse(w, r, http.StatusBadRequest, "IP required for registering new server")
+		WriteResponse(w, r, http.StatusBadRequest, errors.New("server ip required for registering new server"))
+		return
 	}
 
 	if ck.Name == nil {
-		WriteResponse(w, r, http.StatusBadRequest, "server name is required for registering new server")
+		WriteResponse(w, r, http.StatusBadRequest, errors.New("server name is required for registering new server"))
+		return
 	}
 
 	if ck.IsRunning == nil {
-		WriteResponse(w, r, http.StatusBadRequest, "server name is required for registering new server")
+		WriteResponse(w, r, http.StatusBadRequest, errors.New("server running status is required for registering new server"))
+		return
 	}
 
 	if ck.LastUpdated == nil {
-		WriteResponse(w, r, http.StatusBadRequest, "server name is required for registering new server")
+		WriteResponse(w, r, http.StatusBadRequest, errors.New("server last updated date is required for registering new server"))
+		return
 	}
 
 	h.Client.db.Client.RegisterServer(r.Context(), utils.ToString(h.Client.db.Table), utils.ToString(ck.ID), utils.ToString(ck.SK), utils.ToString(ck.IP), utils.ToString(ck.Name), utils.ToBool(ck.IsRunning), utils.ToString(ck.LastUpdated))
