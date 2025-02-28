@@ -1,9 +1,9 @@
-package db
+package database
 
 import (
 	"context"
 
-	"github.com/hnucamendi/creeper-keeper/db/dynamo"
+	"github.com/hnucamendi/creeper-keeper/service/database/dynamo"
 	cktypes "github.com/hnucamendi/creeper-keeper/types"
 	"github.com/hnucamendi/creeper-keeper/utils"
 )
@@ -17,6 +17,8 @@ const (
 type Database interface {
 	RegisterServer(ctx context.Context, tableName string, serverID string, serverType string, serverIP string, serverName string, serverIsRunning bool, serverLastUpdated string) (bool, error)
 	ListServers(ctx context.Context, tableName string) ([]cktypes.Server, error)
+	ListServer(ctx context.Context, tableName string, serverID string) (*cktypes.Server, error)
+	UpsertServer(ctx context.Context, tableName string, serverID string, serverIP string, serverName string) (bool, error)
 }
 
 type Client struct {
