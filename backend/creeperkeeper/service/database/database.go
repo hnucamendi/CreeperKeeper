@@ -18,7 +18,7 @@ type Database interface {
 	RegisterServer(ctx context.Context, tableName string, serverID string, serverType string, serverIP string, serverName string, serverIsRunning bool, serverLastUpdated string) (bool, error)
 	ListServers(ctx context.Context, tableName string) ([]types.Server, error)
 	ListServer(ctx context.Context, tableName string, serverID string) (*types.Server, error)
-	UpsertServer(ctx context.Context, tableName string, serverID string, serverIP string, serverName string) (bool, error)
+	UpsertServer(ctx context.Context, tableName string, serverID string, serverIP string, serverName string) error
 }
 
 type Client struct {

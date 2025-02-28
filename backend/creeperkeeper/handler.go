@@ -57,7 +57,7 @@ func (h *Handler) RegisterServer(w http.ResponseWriter, r *http.Request) {
 		WriteResponse(w, r, http.StatusBadRequest, "server name is required for registering new server")
 	}
 
-	h.Client.db.Client.RegisterServer(r.Context(), tableName, utils.ToString(ck.ID), utils.ToString(ck.SK), utils.ToString(ck.IP), utils.ToString(ck.Name), utils.ToBool(ck.IsRunning), utils.ToString(ck.LastUpdated))
+	h.Client.db.Client.RegisterServer(r.Context(), utils.ToString(h.Client.db.Table), utils.ToString(ck.ID), utils.ToString(ck.SK), utils.ToString(ck.IP), utils.ToString(ck.Name), utils.ToBool(ck.IsRunning), utils.ToString(ck.LastUpdated))
 
 	WriteResponse(w, r, http.StatusOK, "server registered")
 }
@@ -76,9 +76,9 @@ func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
-	servers, err := h.Client.db.Client.ListServers(r.Context(), tableName)
+	servers, err := h.Client.db.Client.ListServers(r.Context(), utils.ToString(h.Client.db.Table))
 	if err != nil {
-		WriteResponse(w, r, http.StatusInternalServerError, servers)
+		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
 	}
 
 	WriteResponse(w, r, http.StatusOK, servers)
@@ -119,18 +119,14 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	server, err := h.Client.db.Client.ListServer(r.Context(), tableName, utils.ToString(ck.ID))
+	server, err := h.Client.db.Client.ListServer(r.Context(), utils.ToString(h.Client.db.Table), utils.ToString(ck.ID))
 	if err != nil {
 		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
 	}
 
-	ok, err := h.Client.db.Client.UpsertServer(r.Context(), utils.ToString(h.Client.db.Table), utils.ToString(ck.ID), utils.ToString(ck.IP), utils.ToString(ck.Name))
+	err = h.Client.db.Client.UpsertServer(r.Context(), utils.ToString(h.Client.db.Table), utils.ToString(ck.ID), utils.ToString(ck.IP), utils.ToString(ck.Name))
 	if err != nil {
 		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
-	}
-
-	if !ok {
-		WriteResponse(w, r, http.StatusInternalServerError, errors.Join(errors.New("upsert server failed")))
 	}
 
 	err = h.Client.systemsmanagerClient.Client.Send(r.Context(), utils.ToString(server.ID), utils.ToString(server.Name))

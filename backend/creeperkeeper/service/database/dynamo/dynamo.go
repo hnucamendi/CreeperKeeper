@@ -91,10 +91,10 @@ func (db *Client) ListServer(ctx context.Context, tableName string, serverID str
 	return &server, nil
 }
 
-func (db *Client) UpsertServer(ctx context.Context, tableName string, serverID string, serverIP string, serverName string) (bool, error) {
+func (db *Client) UpsertServer(ctx context.Context, tableName string, serverID string, serverIP string, serverName string) error {
 	zone, err := time.LoadLocation("America/New_York")
 	if err != nil {
-		return false, err
+		return err
 	}
 	lastUpdated := time.Now().In(zone).Format(time.DateTime)
 
@@ -123,9 +123,9 @@ func (db *Client) UpsertServer(ctx context.Context, tableName string, serverID s
 	}
 	_, err = db.Client.PutItem(ctx, input)
 	if err != nil {
-		return false, err
+		return err
 	}
-	return true, nil
+	return nil
 }
 
 func NewDatabase() (*Client, error) {
