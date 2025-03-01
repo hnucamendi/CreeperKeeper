@@ -27,119 +27,119 @@ func (h *Handler) RegisterServer(w http.ResponseWriter, r *http.Request) {
 	ck := &types.Server{}
 	err := ck.UnmarshallRequest(r.Body)
 	if err != nil {
-		WriteResponse(w, r, http.StatusBadRequest, err.Error())
+		writeResponse(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if ck.ID == nil {
-		WriteResponse(w, r, http.StatusBadRequest, errors.New("server id required for registering new server").Error())
+		writeResponse(w, r, http.StatusBadRequest, errors.New("server id required for registering new server").Error())
 		return
 	}
 
 	if ck.IP == nil {
-		WriteResponse(w, r, http.StatusBadRequest, errors.New("server ip required for registering new server").Error())
+		writeResponse(w, r, http.StatusBadRequest, errors.New("server ip required for registering new server").Error())
 		return
 	}
 
 	if ck.Name == nil {
-		WriteResponse(w, r, http.StatusBadRequest, errors.New("server name is required for registering new server").Error())
+		writeResponse(w, r, http.StatusBadRequest, errors.New("server name is required for registering new server").Error())
 		return
 	}
 
 	if ck.IsRunning == nil {
-		WriteResponse(w, r, http.StatusBadRequest, errors.New("server running status is required for registering new server").Error())
+		writeResponse(w, r, http.StatusBadRequest, errors.New("server running status is required for registering new server").Error())
 		return
 	}
 
 	if ck.LastUpdated == nil {
-		WriteResponse(w, r, http.StatusBadRequest, errors.New("server last updated date is required for registering new server").Error())
+		writeResponse(w, r, http.StatusBadRequest, errors.New("server last updated date is required for registering new server").Error())
 		return
 	}
 
 	h.Client.db.Client.RegisterServer(r.Context(), utils.ToString(h.Client.db.Table), utils.ToString(ck.ID), utils.ToString(ck.SK), utils.ToString(ck.IP), utils.ToString(ck.Name), utils.ToBool(ck.IsRunning), utils.ToString(ck.LastUpdated))
 
-	WriteResponse(w, r, http.StatusOK, "server registered")
+	writeResponse(w, r, http.StatusOK, "server registered")
 }
 
 func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
 	serverID := r.PathValue("serverID")
 	if serverID == "" {
-		WriteResponse(w, r, http.StatusInternalServerError, errors.New("missing serverID: "+serverID))
+		writeResponse(w, r, http.StatusInternalServerError, errors.New("missing serverID: "+serverID))
 	}
 	status, err := h.Client.compute.Client.GetServerStatus(r.Context(), serverID)
 	if err != nil {
-		WriteResponse(w, r, http.StatusInternalServerError, errors.New("failed to get sesrver status: "+err.Error()))
+		writeResponse(w, r, http.StatusInternalServerError, errors.New("failed to get sesrver status: "+err.Error()))
 	}
 
-	WriteResponse(w, r, http.StatusOK, status)
+	writeResponse(w, r, http.StatusOK, status)
 }
 
 func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
 	servers, err := h.Client.db.Client.ListServers(r.Context(), utils.ToString(h.Client.db.Table))
 	if err != nil {
-		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
+		writeResponse(w, r, http.StatusInternalServerError, err.Error())
 	}
 
-	WriteResponse(w, r, http.StatusOK, servers)
+	writeResponse(w, r, http.StatusOK, servers)
 }
 
 func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 	ck := &types.Server{}
 	err := ck.UnmarshallRequest(r.Body)
 	if err != nil {
-		WriteResponse(w, r, http.StatusBadRequest, err.Error())
+		writeResponse(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if ck.ID == nil {
-		WriteResponse(w, r, http.StatusBadRequest, "serverID must be provided")
+		writeResponse(w, r, http.StatusBadRequest, "serverID must be provided")
 		return
 	}
 
 	err = h.Client.compute.Client.StartServer(r.Context(), utils.ToString(ck.ID))
 	if err != nil {
-		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
+		writeResponse(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	WriteResponse(w, r, http.StatusOK, "Server Started")
+	writeResponse(w, r, http.StatusOK, "Server Started")
 }
 
 func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	ck := &types.Server{}
 	err := ck.UnmarshallRequest(r.Body)
 	if err != nil {
-		WriteResponse(w, r, http.StatusBadRequest, err.Error())
+		writeResponse(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if ck.ID == nil {
-		WriteResponse(w, r, http.StatusBadRequest, "serverID must be provided")
+		writeResponse(w, r, http.StatusBadRequest, "serverID must be provided")
 		return
 	}
 
 	server, err := h.Client.db.Client.ListServer(r.Context(), utils.ToString(h.Client.db.Table), utils.ToString(ck.ID))
 	if err != nil {
-		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
+		writeResponse(w, r, http.StatusInternalServerError, err.Error())
 	}
 
 	err = h.Client.db.Client.UpsertServer(r.Context(), utils.ToString(h.Client.db.Table), utils.ToString(ck.ID), utils.ToString(ck.IP), utils.ToString(ck.Name))
 	if err != nil {
-		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
+		writeResponse(w, r, http.StatusInternalServerError, err.Error())
 	}
 
 	err = h.Client.systemsmanagerClient.Client.Send(r.Context(), utils.ToString(server.ID), utils.ToString(server.Name))
 	if err != nil {
-		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
+		writeResponse(w, r, http.StatusInternalServerError, err.Error())
 	}
 
 	err = h.Client.compute.Client.StopServer(r.Context(), utils.ToString(ck.ID))
 	if err != nil {
-		WriteResponse(w, r, http.StatusInternalServerError, err.Error())
+		writeResponse(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	WriteResponse(w, r, http.StatusOK, "Server stopping")
+	writeResponse(w, r, http.StatusOK, "Server stopping")
 }
 
 func generateETag[T any](data T) string {
@@ -148,7 +148,7 @@ func generateETag[T any](data T) string {
 	return `W/"` + hex.EncodeToString(hash[:]) + `"`
 }
 
-func WriteResponse[T any](w http.ResponseWriter, r *http.Request, code int, message T) {
+func writeResponse[T any](w http.ResponseWriter, r *http.Request, code int, message T) {
 	etag := generateETag(message)
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("ETag", etag)
