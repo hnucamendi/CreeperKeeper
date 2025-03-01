@@ -7,7 +7,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	ssmTypes "github.com/aws/aws-sdk-go-v2/service/ssm/types"
-	"github.com/hnucamendi/creeper-keeper/utils"
 )
 
 type SSMAPI interface {
@@ -18,11 +17,7 @@ type Client struct {
 	*ssm.Client
 }
 
-func (c *Client) Send(ctx context.Context, serverID string, serverName string) error {
-	commands := []string{
-		utils.Concat("sudo docker exec -i ", serverName, " rcon-cli"), "stop",
-		utils.Concat("sudo aws s3 sync --delete data s3://creeperkeeper-world-data/", serverName, "/"),
-	}
+func (c *Client) Send(ctx context.Context, serverID string, commands []string) error {
 	cmdInput := &ssm.SendCommandInput{
 		DocumentName: aws.String("AWS-RunShellScript"),
 		InstanceIds:  []string{serverID},

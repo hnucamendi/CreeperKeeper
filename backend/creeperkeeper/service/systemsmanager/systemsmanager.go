@@ -7,7 +7,7 @@ import (
 )
 
 type SystemsManager interface {
-	Send(ctx context.Context, serverID string, serverName string) error
+	Send(ctx context.Context, serverID string, commands []string) error
 }
 
 type Client struct {
