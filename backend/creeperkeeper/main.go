@@ -11,6 +11,7 @@ import (
 	"github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
 	"github.com/hnucamendi/creeper-keeper/service/compute"
 	"github.com/hnucamendi/creeper-keeper/service/database"
+	"github.com/hnucamendi/creeper-keeper/service/orchestrator"
 	"github.com/hnucamendi/creeper-keeper/service/systemsmanager"
 	"github.com/hnucamendi/jwt-go/jwt"
 	"golang.org/x/exp/rand"
@@ -24,6 +25,7 @@ var (
 	dbClient             *database.Client
 	computeClient        *compute.Client
 	systemsmanagerClient *systemsmanager.Client
+	orchestratorClient   *orchestrator.Client
 	mux                  *http.ServeMux
 	j                    *jwt.JWT
 )
@@ -32,6 +34,7 @@ type C struct {
 	db             *database.Client
 	compute        *compute.Client
 	systemsmanager *systemsmanager.Client
+	orchestrator   *orchestrator.Client
 	j              *jwt.JWT
 	*http.Client
 }
@@ -58,6 +61,7 @@ func init() {
 		db:             dbClient,
 		compute:        computeClient,
 		systemsmanager: systemsmanagerClient,
+		orchestrator:   orchestratorClient,
 		j:              j,
 		Client:         hc,
 	}
