@@ -151,7 +151,6 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 
 	// send command to sqs
 	input := types.OrchestratorMessage{
-		Message: map[string]string{},
 	}
 	err = h.Client.orchestrator.Client.OrchestrateCallback(r.Context(), input)
 	if err != nil {
