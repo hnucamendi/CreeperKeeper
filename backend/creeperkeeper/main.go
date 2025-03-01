@@ -29,10 +29,10 @@ var (
 )
 
 type C struct {
-	db                   *database.Client
-	compute              *compute.Client
-	systemsmanagerClient *systemsmanager.Client
-	j                    *jwt.JWT
+	db             *database.Client
+	compute        *compute.Client
+	systemsmanager *systemsmanager.Client
+	j              *jwt.JWT
 	*http.Client
 }
 
@@ -55,11 +55,11 @@ func init() {
 	hc := &http.Client{}
 
 	c := &C{
-		db:                   dbClient,
-		compute:              computeClient,
-		systemsmanagerClient: systemsmanagerClient,
-		j:                    j,
-		Client:               hc,
+		db:             dbClient,
+		compute:        computeClient,
+		systemsmanager: systemsmanagerClient,
+		j:              j,
+		Client:         hc,
 	}
 
 	h := NewHandler(c)

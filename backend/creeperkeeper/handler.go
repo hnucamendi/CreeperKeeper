@@ -65,10 +65,12 @@ func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
 	serverID := r.PathValue("serverID")
 	if serverID == "" {
 		writeResponse(w, r, http.StatusInternalServerError, errors.New("missing serverID: "+serverID))
+    return
 	}
 	status, err := h.Client.compute.Client.GetServerStatus(r.Context(), serverID)
 	if err != nil {
 		writeResponse(w, r, http.StatusInternalServerError, errors.New("failed to get sesrver status: "+err.Error()))
+    return
 	}
 
 	writeResponse(w, r, http.StatusOK, status)
@@ -78,6 +80,7 @@ func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
 	servers, err := h.Client.db.Client.ListServers(r.Context(), utils.ToString(h.Client.db.Table))
 	if err != nil {
 		writeResponse(w, r, http.StatusInternalServerError, err.Error())
+    return
 	}
 
 	writeResponse(w, r, http.StatusOK, servers)
@@ -114,23 +117,30 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if ck.ID == nil {
-		writeResponse(w, r, http.StatusBadRequest, "serverID must be provided")
+		writeResponse(w, r, http.StatusBadRequest, "server id must be provided")
 		return
 	}
 
 	server, err := h.Client.db.Client.ListServer(r.Context(), utils.ToString(h.Client.db.Table), utils.ToString(ck.ID))
 	if err != nil {
 		writeResponse(w, r, http.StatusInternalServerError, err.Error())
+    return
 	}
 
 	err = h.Client.db.Client.UpsertServer(r.Context(), utils.ToString(h.Client.db.Table), utils.ToString(ck.ID), utils.ToString(ck.IP), utils.ToString(ck.Name))
 	if err != nil {
 		writeResponse(w, r, http.StatusInternalServerError, err.Error())
+    return
 	}
 
-	err = h.Client.systemsmanagerClient.Client.Send(r.Context(), utils.ToString(server.ID), utils.ToString(server.Name))
+	commands := []string{
+		utils.Concat("sudo docker exec -i ", utils.ToString(server.Name), " rcon-cli"), "stop",
+		utils.Concat("sudo aws s3 sync --delete data s3://creeperkeeper-world-data/", utils.ToString(server.Name), "/"),
+	}
+	err = h.Client.systemsmanager.Client.Send(r.Context(), utils.ToString(server.ID), commands)
 	if err != nil {
 		writeResponse(w, r, http.StatusInternalServerError, err.Error())
+    return
 	}
 
 	err = h.Client.compute.Client.StopServer(r.Context(), utils.ToString(ck.ID))
