@@ -90,6 +90,19 @@ resource "aws_iam_role_policy" "main" {
         Resource = [
           aws_lambda_function.controller.arn,
           aws_lambda_function.ec2_monitor.arn,
+          aws_lambda_function.sqs_stop.arn,
+        ]
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:GetQueueUrl",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes",
+        ],
+        Resource = [
+          aws_sqs_queue.main.arn,
         ]
       },
     ]
@@ -128,3 +141,22 @@ resource "aws_lambda_permission" "ec2_monitor" {
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.ec2_monitor.arn
 }
+
+## SQS Queue setup ##
+resource "aws_lambda_function" "sqs_stop" {
+  function_name = "${var.ck_app_name}-stop-orchestrator"
+  role          = aws_iam_role.main.arn
+  architectures = ["x86_64"]
+  filename      = "./bootstrap.zip"
+  handler       = "bootstrap"
+  runtime       = "provided.al2023"
+}
+
+resource "aws_lambda_permission" "sqs_stop" {
+  statement_id  = "AllowExecutionFromSQS"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.sqs_stop.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_sqs_queue.main.arn
+}
+

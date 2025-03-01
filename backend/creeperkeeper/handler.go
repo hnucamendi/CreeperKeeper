@@ -65,12 +65,12 @@ func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
 	serverID := r.PathValue("serverID")
 	if serverID == "" {
 		writeResponse(w, r, http.StatusInternalServerError, errors.New("missing serverID: "+serverID))
-    return
+		return
 	}
 	status, err := h.Client.compute.Client.GetServerStatus(r.Context(), serverID)
 	if err != nil {
 		writeResponse(w, r, http.StatusInternalServerError, errors.New("failed to get sesrver status: "+err.Error()))
-    return
+		return
 	}
 
 	writeResponse(w, r, http.StatusOK, status)
@@ -80,7 +80,7 @@ func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
 	servers, err := h.Client.db.Client.ListServers(r.Context(), utils.ToString(h.Client.db.Table))
 	if err != nil {
 		writeResponse(w, r, http.StatusInternalServerError, err.Error())
-    return
+		return
 	}
 
 	writeResponse(w, r, http.StatusOK, servers)
@@ -124,13 +124,13 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	server, err := h.Client.db.Client.ListServer(r.Context(), utils.ToString(h.Client.db.Table), utils.ToString(ck.ID))
 	if err != nil {
 		writeResponse(w, r, http.StatusInternalServerError, err.Error())
-    return
+		return
 	}
 
 	err = h.Client.db.Client.UpsertServer(r.Context(), utils.ToString(h.Client.db.Table), utils.ToString(ck.ID), utils.ToString(ck.IP), utils.ToString(ck.Name))
 	if err != nil {
 		writeResponse(w, r, http.StatusInternalServerError, err.Error())
-    return
+		return
 	}
 
 	commands := []string{
@@ -140,13 +140,22 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	err = h.Client.systemsmanager.Client.Send(r.Context(), utils.ToString(server.ID), commands)
 	if err != nil {
 		writeResponse(w, r, http.StatusInternalServerError, err.Error())
-    return
+		return
 	}
 
 	err = h.Client.compute.Client.StopServer(r.Context(), utils.ToString(ck.ID))
 	if err != nil {
 		writeResponse(w, r, http.StatusInternalServerError, err.Error())
 		return
+	}
+
+	// send command to sqs
+	input := types.OrchestratorMessage{
+		Message: map[string]string{},
+	}
+	err = h.Client.orchestrator.Client.OrchestrateCallback(r.Context(), input)
+	if err != nil {
+		writeResponse(w, r, http.StatusInternalServerError, err.Error())
 	}
 
 	writeResponse(w, r, http.StatusOK, "Server stopping")
