@@ -1,6 +1,6 @@
 module "vanilla" {
   source  = "hnucamendi/minecraft-server-module/aws"
-  version = "1.0.5"
+  version = "1.0.6"
 
   vpc_id             = var.vpc_id
   app_name           = var.ck_app_name
@@ -58,39 +58,39 @@ resource "aws_iam_role_policy_attachment" "s3_policy_attachment" {
 }
 
 ## Direwolf modpack ##
-// module "ftb_server" {
-//   source  = "hnucamendi/minecraft-server-module/aws"
-//   version = "1.0.5"
-// 
-//   vpc_id                              = var.vpc_id
-//   app_name                            = "${var.ck_app_name}-ftb"
-//   instance_type                       = "r6i.large"
-//   minecraft_max_players               = 10
-//   minecraft_motd                      = "RedCraft"
-//   minecraft_ops_list                  = "Oldjimmy_"
-//   minecraft_server_type               = "FTBA"
-//   minecraft_rcon_cmds_last_disconnect = "stop"
-//   minecraft_memory_G                  = 20
-//   minecraft_difficulty_level          = 3
-//   minecraft_world_name                = "RedCraft"
-//   minecraft_world_seed                = var.ck_app_name
-//   ftb_modpack_version_id              = 100011
-//   ftb_modpack_id                      = 126
-// 
-//   security_group_ingress_rules = {
-//     "allow-all-mc" = {
-//       description = "Allow Minecraft TCP"
-//       from_port   = 25565
-//       to_port     = 25565
-//       protocol    = "tcp"
-//       cidr_blocks = ["0.0.0.0/0"]
-//     },
-//     "allow-host-ssh" = {
-//       description = "Allow SSH"
-//       from_port   = 22
-//       to_port     = 22
-//       protocol    = "tcp"
-//       cidr_blocks = ["${var.home_ip}/32"] # Restrict to your IP address
-//     }
-//   }
-// }
+module "ftb_server" {
+  source  = "hnucamendi/minecraft-server-module/aws"
+  version = "1.0.6"
+
+  vpc_id                              = var.vpc_id
+  app_name                            = "Tamochimonoyo"
+  instance_type                       = "t3.large"
+  minecraft_max_players               = 10
+  minecraft_motd                      = "Tamo"
+  minecraft_ops_list                  = "Oldjimmy_"
+  minecraft_server_type               = "FTBA"
+  minecraft_rcon_cmds_last_disconnect = "stop"
+  minecraft_memory_G                  = 7
+  minecraft_difficulty_level          = 3
+  minecraft_world_name                = "RedCraft"
+  minecraft_world_seed                = var.ck_app_name
+  ftb_modpack_version_id              = 100027
+  ftb_modpack_id                      = 126
+
+  security_group_ingress_rules = {
+    "allow-all-mc" = {
+      description = "Allow Minecraft TCP"
+      from_port   = 25565
+      to_port     = 25565
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    },
+    "allow-host-ssh" = {
+      description = "Allow SSH"
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      cidr_blocks = ["${var.home_ip}/32"] # Restrict to your IP address
+    }
+  }
+}
