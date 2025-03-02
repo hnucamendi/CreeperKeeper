@@ -1,10 +1,10 @@
 package main
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"hash"
 	"net/http"
 
 	"github.com/hnucamendi/creeper-keeper/types"
@@ -65,12 +65,13 @@ func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
 	serverID := r.PathValue("serverID")
 	if serverID == "" {
 		writeResponse(w, r, http.StatusInternalServerError, errors.New("missing serverID: "+serverID))
-    return
+		return
 	}
+
 	status, err := h.Client.compute.Client.GetServerStatus(r.Context(), serverID)
 	if err != nil {
 		writeResponse(w, r, http.StatusInternalServerError, errors.New("failed to get sesrver status: "+err.Error()))
-    return
+		return
 	}
 
 	writeResponse(w, r, http.StatusOK, status)
@@ -80,7 +81,7 @@ func (h *Handler) ListServers(w http.ResponseWriter, r *http.Request) {
 	servers, err := h.Client.db.Client.ListServers(r.Context(), utils.ToString(h.Client.db.Table))
 	if err != nil {
 		writeResponse(w, r, http.StatusInternalServerError, err.Error())
-    return
+		return
 	}
 
 	writeResponse(w, r, http.StatusOK, servers)
@@ -124,13 +125,13 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	server, err := h.Client.db.Client.ListServer(r.Context(), utils.ToString(h.Client.db.Table), utils.ToString(ck.ID))
 	if err != nil {
 		writeResponse(w, r, http.StatusInternalServerError, err.Error())
-    return
+		return
 	}
 
 	err = h.Client.db.Client.UpsertServer(r.Context(), utils.ToString(h.Client.db.Table), utils.ToString(ck.ID), utils.ToString(ck.IP), utils.ToString(ck.Name))
 	if err != nil {
 		writeResponse(w, r, http.StatusInternalServerError, err.Error())
-    return
+		return
 	}
 
 	commands := []string{
@@ -140,7 +141,7 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 	err = h.Client.systemsmanager.Client.Send(r.Context(), utils.ToString(server.ID), commands)
 	if err != nil {
 		writeResponse(w, r, http.StatusInternalServerError, err.Error())
-    return
+		return
 	}
 
 	err = h.Client.compute.Client.StopServer(r.Context(), utils.ToString(ck.ID))
@@ -153,21 +154,32 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 }
 
 func generateETag[T any](data T) string {
-	jsonData, _ := json.Marshal(data)
-	hash := sha256.Sum256(jsonData)
-	return `W/"` + hex.EncodeToString(hash[:]) + `"`
+	hasher := hashPool.Get().(hash.Hash)
+	hasher.Reset()
+	defer hashPool.Put(hasher)
+
+	if err := binary.Write(hasher, binary.LittleEndian, data); err != nil {
+		return `W/"fallback"`
+	}
+
+	hashSum := hasher.Sum(nil)
+	return `W/"` + string(hashSum) + `"`
 }
 
 func writeResponse[T any](w http.ResponseWriter, r *http.Request, code int, message T) {
+	// Check If-None-Match first to avoid unnecessary ETag computation
+	if match := r.Header.Get("If-None-Match"); match != "" {
+		tempETag := generateETag(message)
+		if match == tempETag {
+			w.WriteHeader(http.StatusNotModified)
+			return
+		}
+	}
+
 	etag := generateETag(message)
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("ETag", etag)
 	w.WriteHeader(code)
-
-	if match := r.Header.Get("If-None-Match"); match == etag {
-		w.WriteHeader(http.StatusNotModified)
-		return
-	}
 
 	json.NewEncoder(w).Encode(message)
 }

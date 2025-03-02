@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -26,6 +28,7 @@ var (
 	systemsmanagerClient *systemsmanager.Client
 	mux                  *http.ServeMux
 	j                    *jwt.JWT
+	hashPool             sync.Pool = sync.Pool{New: func() any { return sha256.New() }}
 )
 
 type C struct {
